@@ -1,0 +1,2877 @@
+ <!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <!-- Browser Tab Favicon Logo (Transparent Background & Full-Size Zoomed Crown) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='6 1 52 57' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='6' y1='1' x2='58' y2='58' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23fffbeb'/%3E%3Cstop offset='35%25' stop-color='%23fde68a'/%3E%3Cstop offset='68%25' stop-color='%23f59e0b'/%3E%3Cstop offset='100%25' stop-color='%23e9d5ff'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='32' y1='11' x2='32' y2='45' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23c084fc' stop-opacity='0.65'/%3E%3Cstop offset='100%25' stop-color='%233b0764' stop-opacity='0.35'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='30' r='22' stroke='url(%23g)' stroke-width='1.2' stroke-dasharray='2.5 3' opacity='0.75'/%3E%3Cpath d='M14 45L19 25L27 33L32 17L37 33L45 25L50 45H14Z' fill='url(%23v)'/%3E%3Cpath d='M12 45L9 21L23 33L32 11L41 33L55 21L52 45H12Z' stroke='url(%23g)' stroke-width='3.2' stroke-linejoin='miter'/%3E%3Cpath d='M32 11V45M23 33L19 45M41 33L45 45' stroke='url(%23g)' stroke-width='1.8' opacity='0.9'/%3E%3Cpath d='M32 1.5L34.2 6.2L39 8L34.2 9.8L32 14.5L29.8 9.8L25 8L29.8 6.2L32 1.5Z' fill='url(%23g)'/%3E%3Cpolygon points='9,14 11.5,17.5 9,21 6.5,17.5' fill='%23fde68a'/%3E%3Cpolygon points='55,14 57.5,17.5 55,21 52.5,17.5' fill='%23e9d5ff'/%3E%3Crect x='11' y='48' width='42' height='3.8' rx='1.8' fill='url(%23g)'/%3E%3Cpath d='M19 54.5L32 57.5L45 54.5' stroke='url(%23g)' stroke-width='2.2' stroke-linecap='round'/%3E%3Cpolygon points='32,28 36,35 32,42 28,35' fill='url(%23g)'/%3E%3C/svg%3E">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chess Wiz — The Arcane Sanctuary</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Unicase:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        :root {
+            --surface: rgba(26, 24, 32, 0.85);
+            --primary: #d0bcff;
+            --on-primary: #381e72;
+            --secondary: #4a4458;
+            --on-secondary: #e8def8;
+            --outline: rgba(147, 143, 153, 0.28);
+        }
+        * { user-select: none; -webkit-user-select: none; box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0d0b12; font-family: 'Inter', sans-serif; color: #e6e1e5; }
+        #canvas-container { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+        canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+        canvas:active { cursor: grabbing; }
+        .md3-surface { background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--outline); box-shadow: 0 12px 40px rgba(0,0,0,0.6); }
+        .md3-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; height: 2.65rem; padding: 0 1.05rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; color: #e6e1e5; background: rgba(255,255,255,0.05); border: 1px solid transparent; cursor: pointer; }
+        .md3-btn:hover:not(:disabled) { background: rgba(208,188,255,0.14); border-color: rgba(208,188,255,0.3); transform: translateY(-1px); }
+        .md3-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+        .md3-btn-primary { background: var(--primary); color: var(--on-primary); font-weight: 600; }
+        .md3-btn-primary:hover:not(:disabled) { background: #e2d4ff; box-shadow: 0 4px 16px rgba(208,188,255,0.35); }
+        .md3-btn-tonal { background: var(--secondary); color: var(--on-secondary); }
+        .font-gothic { font-family: 'Cinzel Decorative', 'Cormorant Unicase', serif; letter-spacing: 0.14em; }
+        .wizard-title-glow {
+            font-family: 'Cinzel Decorative', serif;
+            background: linear-gradient(135deg, #fffbeb 0%, #fde68a 35%, #f59e0b 68%, #e9d5ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 14px rgba(245, 158, 11, 0.38)) drop-shadow(0 0 28px rgba(168, 85, 247, 0.35));
+            letter-spacing: 0.18em;
+        }
+        .material-symbols-rounded { font-size: 20px; line-height: 1; }
+        @keyframes checkPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.6); } 50% { box-shadow: 0 0 0 10px rgba(248,113,113,0); } }
+        .check-alert { animation: checkPulse 1.8s infinite; }
+        .menu-option-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; cursor: pointer; }
+        .menu-option-card:hover { background: rgba(208,188,255,0.1); border-color: rgba(208,188,255,0.3); }
+        .menu-option-card.active { background: rgba(208,188,255,0.22); border-color: #d0bcff; box-shadow: 0 0 18px rgba(208,188,255,0.22); }
+        input[type="range"].md3-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: rgba(255,255,255,0.14); border-radius: 999px; outline: none; }
+        input[type="range"].md3-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #d0bcff; cursor: pointer; }
+        .hud-hidden { opacity: 0 !important; pointer-events: none !important; transform: translate(-50%, 16px); transition: all 0.35s ease; }
+        .hud-top-hidden { opacity: 0 !important; pointer-events: none !important; transform: translate(-50%, -16px); transition: all 0.35s ease; }
+        .hud-visible { opacity: 1 !important; pointer-events: auto !important; transform: translate(-50%, 0); transition: all 0.35s ease; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <!-- LARGER SPACIOUS START MENU (Large CHESS WIZ Title at Top, Buttons Below) -->
+    <div id="start-menu-overlay" class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md transition-opacity duration-300 overflow-y-auto pointer-events-auto">
+        <div class="md3-surface rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-purple-300/30 max-h-[94vh] overflow-y-auto flex flex-col justify-between my-auto pointer-events-auto">
+            
+            <!-- Large Prominent Title Header at the Very Top -->
+            <!-- Top Header Row: Custom Logo, Title & Sign In Account Pill -->
+            <div class="flex items-center justify-between pb-5 mb-5 border-b border-white/10 relative z-10 gap-3">
+                <div class="w-10"></div> <!-- Spacer for balance -->
+                
+                <div class="text-center">
+                    <!-- Modern Arcane Sovereign Crown Logo (Matches Wizard Title Gradient & Glow) -->
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-b from-[#171226] via-[#0f0b1a] to-[#090710] flex items-center justify-center mx-auto mb-3 shadow-[0_8px_30px_rgba(0,0,0,0.7),0_0_25px_rgba(168,85,247,0.22)] border border-amber-300/35 relative overflow-hidden group">
+                        <!-- Subtle Arcane Halo Backlight -->
+                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(245,158,11,0.22),rgba(168,85,247,0.12)_55%,transparent_75%)]"></div>
+                        <!-- Inner Filigree Corner Frame -->
+                        <div class="absolute inset-1 rounded-xl border border-purple-300/15 pointer-events-none"></div>
+
+                        <svg class="w-11 h-11 sm:w-13 sm:h-13 relative z-10 transition-transform duration-500 group-hover:scale-105" style="filter: drop-shadow(0 2px 10px rgba(245, 158, 11, 0.45)) drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <!-- Exact same metallic gradient as .wizard-title-glow -->
+                                <linearGradient id="wizCrownGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#fffbeb" />
+                                    <stop offset="35%" stop-color="#fde68a" />
+                                    <stop offset="68%" stop-color="#f59e0b" />
+                                    <stop offset="100%" stop-color="#e9d5ff" />
+                                </linearGradient>
+                                <linearGradient id="wizInnerVelvet" x1="50%" y1="0%" x2="50%" y2="100%">
+                                    <stop offset="0%" stop-color="#c084fc" stop-opacity="0.45" />
+                                    <stop offset="100%" stop-color="#3b0764" stop-opacity="0.15" />
+                                </linearGradient>
+                            </defs>
+
+                            <!-- Arcane Astral Halo Ring -->
+                            <circle cx="32" cy="30" r="21" stroke="url(#wizCrownGrad)" stroke-width="0.85" stroke-dasharray="2 3" opacity="0.55" />
+
+                            <!-- Inner Velvet Sanctuary Backing -->
+                            <path d="M14 45L19 25L27 33L32 17L37 33L45 25L50 45H14Z" fill="url(#wizInnerVelvet)" />
+
+                            <!-- Swept-Wing Decorative Crown Spires (Cinzel Decorative Style) -->
+                            <path d="M12 45L9 21L23 33L32 11L41 33L55 21L52 45H12Z" stroke="url(#wizCrownGrad)" stroke-width="2.4" stroke-linejoin="miter" stroke-miterlimit="10" />
+
+                            <!-- Inner Faceted Geometric Ribs -->
+                            <path d="M32 11V45M23 33L19 45M41 33L45 45" stroke="url(#wizCrownGrad)" stroke-width="1.3" opacity="0.8" />
+
+                            <!-- Floating Arcane Star-Cross Sigil Above Center Spire -->
+                            <path d="M32 2L33.8 6.2L38 8L33.8 9.8L32 14L30.2 9.8L26 8L30.2 6.2L32 2Z" fill="url(#wizCrownGrad)" />
+
+                            <!-- Wingtip Arcane Diamonds -->
+                            <polygon points="9,15 11,18 9,21 7,18" fill="#fde68a" />
+                            <polygon points="55,15 57,18 55,21 53,18" fill="#e9d5ff" />
+
+                            <!-- Sovereign Base Pedestal & Levitating Lower Chevron -->
+                            <rect x="12" y="48" width="40" height="3" rx="1.5" fill="url(#wizCrownGrad)" />
+                            <path d="M20 54L32 57L44 54" stroke="url(#wizCrownGrad)" stroke-width="1.6" stroke-linecap="round" opacity="0.85" />
+
+                            <!-- Center Amethyst-Gold Core Gem -->
+                            <polygon points="32,29 35.5,35 32,41 28.5,35" fill="url(#wizCrownGrad)" />
+                        </svg>
+                    </div>
+                    <h1 class="wizard-title-glow text-2xl sm:text-3xl font-black leading-none select-none">CHESS WIZ</h1>
+                    <p class="text-[10px] sm:text-xs text-amber-200/80 mt-1.5 font-medium tracking-[0.22em] uppercase">Arcane Sanctuary Edition</p>
+                </div>
+
+                <!-- Sign In / Account Button Pill on Top-Right -->
+                <div class="shrink-0">
+                    <button type="button" onclick="openAuthModal()" id="auth-header-btn" class="md3-btn md3-btn-tonal !h-10 !px-3 !text-xs border border-purple-300/30 shadow-lg flex items-center gap-2 pointer-events-auto">
+                        <img id="auth-header-avatar" src="" alt="Avatar" class="w-6 h-6 rounded-full object-cover border border-amber-300/60 hidden" />
+                        <span id="auth-header-icon" class="material-symbols-rounded text-purple-200 !text-base">account_circle</span>
+                        <span id="auth-header-label" class="font-semibold text-white">Sign In</span>
+                    </button>
+                </div>
+            </div>
+                
+            <!-- Subpanel Action Navigation Row (Placed below the title) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5 relative z-10">
+                <button type="button" id="btn-start-puzzles" onclick="toggleStartPuzzlesPanel()" class="md3-btn md3-btn-tonal !h-10 !text-xs border border-emerald-300/30 shadow-md">
+                    <span id="start-puzzles-icon" class="material-symbols-rounded !text-base text-emerald-300">extension</span>
+                    <span id="start-puzzles-label">Puzzles</span>
+                </button>
+                <button type="button" id="btn-start-analyse" onclick="toggleStartAnalysePanel()" class="md3-btn md3-btn-tonal !h-10 !text-xs border border-sky-300/30 shadow-md">
+                    <span id="start-analyse-icon" class="material-symbols-rounded !text-base text-sky-300">analytics</span>
+                    <span id="start-analyse-label">Analyse</span>
+                </button>
+                <button type="button" id="btn-start-customize" onclick="toggleStartCustomizePanel()" class="md3-btn md3-btn-tonal !h-10 !text-xs border border-amber-300/30 shadow-md">
+                    <span id="start-customize-icon" class="material-symbols-rounded !text-base text-amber-200">palette</span>
+                    <span id="start-customize-label">Customize</span>
+                </button>
+                <button type="button" id="btn-start-settings" onclick="toggleStartSettingsPanel()" class="md3-btn md3-btn-tonal !h-10 !text-xs border border-purple-300/30 shadow-md">
+                    <span id="start-settings-icon" class="material-symbols-rounded !text-base text-purple-200">settings</span>
+                    <span id="start-settings-label">Settings</span>
+                </button>
+            </div>
+
+            <!-- 1. MAIN CONFIGURATION VIEW -->
+            <div id="start-menu-main-view" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5">1. Battle Mode</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="menu-mode-ai" onclick="setMenuMode('ai')" class="menu-option-card active rounded-2xl p-3 flex flex-col items-center text-center gap-1">
+                                <span class="material-symbols-rounded text-purple-300 text-2xl">smart_toy</span>
+                                <div class="text-xs sm:text-sm font-semibold text-white">vs Wizard AI</div>
+                                <div class="text-[10px] text-white/55">Solo Duel</div>
+                            </button>
+                            <button type="button" id="menu-mode-pvp" onclick="setMenuMode('pvp')" class="menu-option-card rounded-2xl p-3 flex flex-col items-center text-center gap-1">
+                                <span class="material-symbols-rounded text-amber-300 text-2xl">group</span>
+                                <div class="text-xs sm:text-sm font-semibold text-white">Pass &amp; Play</div>
+                                <div class="text-[10px] text-white/55">2P Local</div>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="menu-side-section">
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5">2. Your Faction</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="menu-side-w" onclick="setMenuSide('w')" class="menu-option-card active rounded-2xl p-3 flex flex-col items-center text-center gap-1">
+                                <span class="w-5 h-5 rounded-full bg-stone-100 shadow-[0_0_10px_#fff] my-0.5"></span>
+                                <div class="text-xs sm:text-sm font-semibold text-white">Marble</div>
+                                <div class="text-[10px] text-amber-200/75">White • 1st</div>
+                            </button>
+                            <button type="button" id="menu-side-b" onclick="setMenuSide('b')" class="menu-option-card rounded-2xl p-3 flex flex-col items-center text-center gap-1">
+                                <span class="w-5 h-5 rounded-full bg-purple-950 border border-purple-400 shadow-[0_0_10px_#a855f7] my-0.5"></span>
+                                <div class="text-xs sm:text-sm font-semibold text-white">Obsidian</div>
+                                <div class="text-[10px] text-purple-300/75">Black • 2nd</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="menu-diff-section">
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5">3. Wizard AI Difficulty</label>
+                    <div class="grid grid-cols-3 gap-2.5">
+                        <button type="button" id="menu-diff-apprentice" onclick="setMenuDifficulty('apprentice')" class="menu-option-card rounded-2xl p-2.5 text-center">
+                            <div class="material-symbols-rounded text-emerald-300 text-xl">auto_fix_normal</div>
+                            <div class="text-xs font-semibold text-white">Apprentice</div>
+                            <div class="text-[10px] text-white/50">Novice • Casual</div>
+                        </button>
+                        <button type="button" id="menu-diff-scholar" onclick="setMenuDifficulty('scholar')" class="menu-option-card active rounded-2xl p-2.5 text-center">
+                            <div class="material-symbols-rounded text-sky-300 text-xl">menu_book</div>
+                            <div class="text-xs font-semibold text-white">Scholar</div>
+                            <div class="text-[10px] text-white/50">Adept • Tactical</div>
+                        </button>
+                        <button type="button" id="menu-diff-archmage" onclick="setMenuDifficulty('archmage')" class="menu-option-card rounded-2xl p-2.5 text-center">
+                            <div class="material-symbols-rounded text-amber-300 text-xl">bolt</div>
+                            <div class="text-xs font-semibold text-white">Archmage</div>
+                            <div class="text-[10px] text-white/50">Master • Deep</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
+                    <div class="flex items-center gap-2 text-xs text-white/75">
+                        <span id="menu-sound-icon" class="material-symbols-rounded text-purple-300">volume_up</span>
+                        <span id="menu-sound-text">Cathedral Audio: 85%</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="toggleSoundGlobal()" id="menu-sound-btn" class="md3-btn !h-7 !px-3 !text-xs">Mute Audio</button>
+                        <button type="button" onclick="saveGameplayToFile()" class="md3-btn !h-7 !px-3 !text-xs text-amber-200">
+                            <span class="material-symbols-rounded !text-sm">save</span><span>Save Game</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. PUZZLES PANEL VIEW -->
+            <!-- 2. PUZZLES PANEL VIEW (3 Training Tiers: Apprentice, Scholar, Archmage) -->
+            <div id="start-menu-puzzles-view" class="hidden space-y-3 relative z-10 pointer-events-auto">
+                <div>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-emerald-200/85 mb-1.5">
+                        1. Select Tactical Training Tier (3 Hints &amp; 3 Undos per Trial)
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" id="pz-tier-apprentice" onclick="setPuzzleDifficulty('apprentice')" class="menu-option-card active rounded-2xl p-2 text-center">
+                            <div class="material-symbols-rounded text-emerald-300 text-xl">auto_fix_normal</div>
+                            <div class="text-xs font-semibold text-white">Apprentice</div>
+                            <div class="text-[10px] text-white/50">Easy • 1-Move</div>
+                        </button>
+                        <button type="button" id="pz-tier-scholar" onclick="setPuzzleDifficulty('scholar')" class="menu-option-card rounded-2xl p-2 text-center">
+                            <div class="material-symbols-rounded text-sky-300 text-xl">menu_book</div>
+                            <div class="text-xs font-semibold text-white">Scholar</div>
+                            <div class="text-[10px] text-white/50">Medium • Forks/Pins</div>
+                        </button>
+                        <button type="button" id="pz-tier-archmage" onclick="setPuzzleDifficulty('archmage')" class="menu-option-card rounded-2xl p-2 text-center">
+                            <div class="material-symbols-rounded text-amber-300 text-xl">bolt</div>
+                            <div class="text-xs font-semibold text-white">Archmage</div>
+                            <div class="text-[10px] text-white/50">Hard • Sacrifices</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label id="pz-tier-subtitle" class="text-[11px] font-semibold uppercase tracking-wider text-emerald-300/80">
+                            Apprentice Trials (Click any trial to train)
+                        </label>
+                        <span class="text-[10px] text-white/50">3 Hints • 3 Undos</span>
+                    </div>
+                    <div id="menu-puzzle-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-2"></div>
+                </div>
+            </div>
+
+            <!-- 3. SETTINGS PANEL VIEW -->
+            <div id="start-menu-settings-view" class="hidden space-y-3">
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs sm:text-sm font-semibold text-white">Game Volume &amp; Acoustics</span>
+                        <div class="flex items-center gap-2">
+                            <span id="settings-vol-badge" class="text-xs font-mono font-semibold text-purple-200 bg-purple-500/20 px-2 py-0.5 rounded-full">85%</span>
+                            <button type="button" id="settings-mute-btn" onclick="toggleSoundGlobal()" class="md3-btn !h-7 !px-2.5 !text-xs">Mute</button>
+                        </div>
+                    </div>
+                    <input type="range" id="settings-volume-slider" class="md3-slider" min="0" max="100" value="85" oninput="handleVolumeSliderChange(this.value)">
+                </div>
+
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs sm:text-sm font-semibold text-white">Animation Speed &amp; Debris</span>
+                        <span id="settings-anim-badge" class="text-xs text-amber-200">Normal (1.0x)</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button type="button" id="anim-speed-0.5" onclick="setAnimationSpeed(0.5)" class="menu-option-card rounded-xl py-1.5 text-xs font-semibold text-white">0.5x</button>
+                        <button type="button" id="anim-speed-1" onclick="setAnimationSpeed(1.0)" class="menu-option-card active rounded-xl py-1.5 text-xs font-semibold text-white">1.0x</button>
+                        <button type="button" id="anim-speed-1.75" onclick="setAnimationSpeed(1.75)" class="menu-option-card rounded-xl py-1.5 text-xs font-semibold text-white">1.75x</button>
+                        <button type="button" id="anim-speed-4" onclick="setAnimationSpeed(4.0)" class="menu-option-card rounded-xl py-1.5 text-xs font-semibold text-white">Instant</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btn-toggle-shatter" onclick="cycleShatterIntensity()" class="menu-option-card active rounded-xl p-2 text-left">
+                            <div class="text-xs font-semibold text-white">Shatter Debris</div>
+                            <div id="shatter-density-label" class="text-[10px] text-white/60">High (34 Shards)</div>
+                        </button>
+                        <button type="button" id="btn-toggle-idle" onclick="toggleIdleBreathing()" class="menu-option-card active rounded-xl p-2 text-left">
+                            <div class="text-xs font-semibold text-white">Idle Breathing</div>
+                            <div id="idle-anim-label" class="text-[10px] text-white/60">Enabled</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs sm:text-sm font-semibold text-white">Gameplay Save File Address</span>
+                        <label class="inline-flex items-center gap-1.5 text-xs text-white/75 cursor-pointer">
+                            <input type="checkbox" id="autosave-checkbox" onchange="toggleAutoSave(this.checked)" class="accent-purple-400 rounded">
+                            <span>Auto-Save</span>
+                        </label>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="save-file-address-input" value="C:\Games\ChessWiz\cathedral_match.json" oninput="updateSavePathAddress(this.value)" class="flex-1 h-9 px-3 rounded-xl bg-black/45 border border-white/15 text-xs text-white font-mono" />
+                        <button type="button" onclick="chooseSaveFileLocation()" class="md3-btn md3-btn-tonal !h-9 !px-3 !text-xs">Browse...</button>
+                    </div>
+                    <div id="save-address-hint" class="text-[11px] text-white/55 truncate">Target: C:\Games\ChessWiz\cathedral_match.json</div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="saveGameplayToFile()" class="md3-btn md3-btn-primary !h-8 !text-xs">Save .JSON</button>
+                        <button type="button" onclick="exportPGNFile()" class="md3-btn !h-8 !text-xs border border-white/15">Save .PGN</button>
+                        <button type="button" onclick="triggerLoadGameplayFile()" class="md3-btn !h-8 !text-xs border border-white/15">Load Save</button>
+                        <input type="file" id="load-gameplay-input" accept=".json,.pgn" class="hidden" onchange="handleLoadGameplayFile(event)" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. CUSTOMIZE BOARD & PIECES VIEW -->
+            <div id="start-menu-customize-view" class="hidden space-y-3">
+                <!-- Show / Hide Squares (Shown by Default) -->
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">1. Board Squares Visibility (Default: Shown)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btn-squares-show" onclick="setSquaresVisibility(true)" class="menu-option-card active rounded-xl p-2 flex items-center justify-center gap-2 text-xs font-semibold text-white">
+                            <span class="material-symbols-rounded text-emerald-300 !text-base">grid_on</span><span>Show Squares (Default)</span>
+                        </button>
+                        <button type="button" id="btn-squares-hide" onclick="setSquaresVisibility(false)" class="menu-option-card rounded-xl p-2 flex items-center justify-center gap-2 text-xs font-semibold text-white">
+                            <span class="material-symbols-rounded text-rose-300 !text-base">grid_off</span><span>Hide Squares</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">2. Cathedral Board Square Theme</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="theme-board-classic" onclick="applyBoardSquareTheme('classic')" class="menu-option-card active rounded-xl p-2 text-xs font-semibold text-white">Gothic Alabaster</button>
+                        <button type="button" id="theme-board-emerald" onclick="applyBoardSquareTheme('emerald')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Emerald Sanctum</button>
+                        <button type="button" id="theme-board-crimson" onclick="applyBoardSquareTheme('crimson')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Royal Crimson</button>
+                        <button type="button" id="theme-board-sapphire" onclick="applyBoardSquareTheme('sapphire')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Arcane Sapphire</button>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">3. Sanctuary Altar Frame</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" id="theme-frame-bronze" onclick="applyBoardFrameTheme('bronze')" class="menu-option-card active rounded-xl p-2 text-xs font-semibold text-white">Cathedral Bronze</button>
+                        <button type="button" id="theme-frame-gold" onclick="applyBoardFrameTheme('gold')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Royal Gold</button>
+                        <button type="button" id="theme-frame-iron" onclick="applyBoardFrameTheme('iron')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Obsidian Iron</button>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">4. Sculpted Piece Vessels &amp; Runes</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="theme-piece-classic" onclick="applyPieceTheme('classic')" class="menu-option-card active rounded-xl p-2 text-xs font-semibold text-white">Marble vs Obsidian</button>
+                        <button type="button" id="theme-piece-royal" onclick="applyPieceTheme('royal')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Ivory Gold vs Ebony</button>
+                        <button type="button" id="theme-piece-jade" onclick="applyPieceTheme('jade')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Celestial Jade vs Ruby</button>
+                        <button type="button" id="theme-piece-frost" onclick="applyPieceTheme('frost')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Frost vs Nether</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. START MENU ANALYSE VIEW (Previous Cloud Game or File Explorer Import) -->
+            <div id="start-menu-analyse-view" class="hidden space-y-3">
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                    <div>
+                        <div class="text-xs sm:text-sm font-semibold text-white flex items-center gap-1.5">
+                            <span class="material-symbols-rounded text-sky-300 !text-base">cloud_done</span>
+                            <span>Cathedral Oracle Game Review</span>
+                        </div>
+                        <div id="start-analyse-source-label" class="text-[11px] text-white/55">Reviewing your previous match saved in Cloud</div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button" onclick="analysePreviousCloudGame()" class="md3-btn md3-btn-tonal !h-8 !px-3 !text-xs">
+                            <span class="material-symbols-rounded !text-sm text-sky-300">history</span>
+                            <span>Previous Game</span>
+                        </button>
+                        <button type="button" onclick="document.getElementById('import-analyse-input').click()" class="md3-btn md3-btn-primary !h-8 !px-3 !text-xs">
+                            <span class="material-symbols-rounded !text-sm">folder_open</span>
+                            <span>Import File...</span>
+                        </button>
+                        <input type="file" id="import-analyse-input" accept=".json,.pgn" class="hidden" onchange="handleImportGameForAnalysis(event)" />
+                    </div>
+                </div>
+
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-sky-200">Move-by-Move Breakdown</span>
+                        <div id="start-analysis-summary-badges" class="flex items-center gap-1.5 text-[10px] font-semibold"></div>
+                    </div>
+                    <div id="start-analysis-list" class="max-h-60 overflow-y-auto space-y-2 pr-1">
+                        <div class="text-xs text-white/50 py-4 text-center">Click "Previous Game" or "Import File..." to analyse.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. CONTINUE GAME PANEL VIEW (Previous Cloud Match or Import Incomplete Save) -->
+            <div id="start-menu-continue-view" class="hidden space-y-3 relative z-10 pointer-events-auto">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-amber-200/90">
+                        Continue an Incomplete Match
+                    </label>
+                    <button type="button" onclick="resetStartMenuSubpanels()" class="md3-btn !h-7 !px-2.5 !text-xs">
+                        <span class="material-symbols-rounded !text-sm">arrow_back</span>
+                        <span>Back</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Option 1: Previous Game (Cloud / Active Session) -->
+                    <button type="button" onclick="continuePreviousCloudMatch()" class="menu-option-card rounded-2xl p-4 flex flex-col items-start gap-2 text-left border border-purple-400/30">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center">
+                            <span class="material-symbols-rounded text-purple-300 text-2xl">history</span>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-white">Previous Game</div>
+                            <div id="continue-prev-desc" class="text-[11px] text-white/60 mt-0.5">
+                                Restore your last match from Cathedral Cloud and keep playing
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- Option 2: Import Saved Game from File Explorer -->
+                    <button type="button" onclick="document.getElementById('continue-import-input').click()" class="menu-option-card rounded-2xl p-4 flex flex-col items-start gap-2 text-left border border-amber-400/30">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center">
+                            <span class="material-symbols-rounded text-amber-300 text-2xl">folder_open</span>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-white">Import Saved Game</div>
+                            <div class="text-[11px] text-white/60 mt-0.5">
+                                Load an incomplete .JSON or .PGN file from File Explorer to continue
+                            </div>
+                        </div>
+                    </button>
+                    <input type="file" id="continue-import-input" accept=".json,.pgn" class="hidden" onchange="handleImportContinueGame(event)" />
+                </div>
+            </div>
+
+            <!-- CTA Footer (Enter the Cathedral on Left, Continue Game on Right) -->
+            <div class="mt-4 flex flex-wrap sm:flex-nowrap gap-2.5 shrink-0">
+                <button type="button" id="btn-resume-match" onclick="closeStartMenu(false)" class="md3-btn md3-btn-tonal flex-1 !h-11 !text-xs sm:!text-sm hidden">
+                    <span class="material-symbols-rounded">play_arrow</span><span>Resume</span>
+                </button>
+                <button type="button" onclick="closeStartMenu(true)" class="md3-btn md3-btn-primary flex-[2] !h-11 !text-xs sm:!text-base shadow-xl">
+                    <span class="material-symbols-rounded">swords</span><span>Enter the Cathedral</span>
+                </button>
+                <button type="button" id="btn-continue-game" onclick="toggleStartContinuePanel()" class="md3-btn md3-btn-tonal flex-[1.4] !h-11 !text-xs sm:!text-sm border border-amber-300/35 text-amber-200 shadow-lg">
+                    <span id="start-continue-icon" class="material-symbols-rounded text-amber-300">restore</span>
+                    <span id="start-continue-label">Continue Game</span>
+                </button>
+            </div>
+         </div>
+      </div>
+
+    <!-- Top Status HUD (Hidden until Enter the Cathedral) -->
+    <header id="top-hud-bar" class="fixed top-4 left-1/2 z-10 w-[95%] max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-2 hud-top-hidden">
+        <div class="md3-surface rounded-full px-5 py-2 flex items-center gap-3.5">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="openStartMenu()">
+                <span class="material-symbols-rounded text-[#d0bcff]">castle</span>
+                <span class="font-gothic font-bold tracking-wider text-sm sm:text-base text-white">CHESS WIZ</span>
+            </div>
+            <div class="h-4 w-[1px] bg-white/15"></div>
+            <div id="turn-badge" class="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs sm:text-sm font-medium">
+                <span id="turn-dot" class="w-3 h-3 rounded-full bg-stone-100 shadow-[0_0_8px_#fff]"></span>
+                <span id="status-text">White's Turn (Marble)</span>
+            </div>
+        </div>
+        <div class="md3-surface rounded-full px-4 py-1.5 flex items-center gap-3.5 text-xs sm:text-sm">
+            <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-stone-100 inline-block"></span>
+                <span class="text-white/60">Captures:</span>
+                <span id="captured-by-white" class="font-semibold text-amber-200">0</span>
+            </div>
+            <div class="h-3.5 w-[1px] bg-white/15"></div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-950 border border-purple-400/50 inline-block"></span>
+                <span class="text-white/60">Captures:</span>
+                <span id="captured-by-black" class="font-semibold text-purple-300">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Compact Non-Blocking Puzzle HUD Bar -->
+    <div id="puzzle-banner" class="fixed top-14 left-1/2 -translate-x-1/2 z-20 w-[96%] max-w-2xl hidden pointer-events-none">
+        <div class="md3-surface rounded-full px-3.5 py-1.5 border border-emerald-400/40 shadow-lg flex items-center justify-between gap-2 pointer-events-auto bg-black/75 backdrop-blur-md">
+            <div class="flex items-center gap-2 min-w-0">
+                <span id="puzzle-badge-num" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-200 shrink-0">Archmage 1/3</span>
+                <div class="truncate">
+                    <span id="puzzle-title" class="font-gothic font-bold text-xs text-white mr-1.5">Opera House Finale</span>
+                    <span id="puzzle-objective" class="text-[11px] text-emerald-200/90">White to Move — Mate in 2</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+                <button type="button" onclick="triggerOracleHint()" id="puzzle-banner-hint-btn" class="md3-btn !h-7 !px-2.5 !text-[11px] border border-amber-400/35 text-amber-200">
+                    <span class="material-symbols-rounded !text-xs text-amber-300">lightbulb</span>
+                    <span id="puzzle-banner-hint-label">3/3</span>
+                </button>
+                <button type="button" onclick="document.getElementById('btn-undo').click()" id="puzzle-banner-undo-btn" class="md3-btn !h-7 !px-2.5 !text-[11px] border border-purple-300/35 text-purple-200">
+                    <span class="material-symbols-rounded !text-xs">undo</span>
+                    <span id="puzzle-banner-undo-label">3/3</span>
+                </button>
+                <button type="button" onclick="retryCurrentPuzzle()" class="md3-btn !h-7 !px-2 !text-xs text-amber-200" title="Retry"><span class="material-symbols-rounded !text-sm">refresh</span></button>
+                <button type="button" onclick="nextPuzzle()" class="md3-btn md3-btn-tonal !h-7 !px-2.5 !text-[11px]" title="Next Puzzle"><span>Next</span><span class="material-symbols-rounded !text-sm">chevron_right</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Banner -->
+    <div id="event-toast" class="fixed top-36 sm:top-24 left-1/2 -translate-x-1/2 z-30 pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-2">
+        <div class="md3-surface rounded-full px-5 py-1.5 text-xs sm:text-sm font-semibold text-amber-200 border border-amber-400/30 flex items-center gap-2">
+            <span class="material-symbols-rounded text-amber-300 text-base">auto_awesome</span>
+            <span id="event-toast-text">Obsidian Knight Shattered!</span>
+        </div>
+    </div>
+
+    <!-- Post-Game Result & Move Analysis Hover Tile -->
+    <div id="game-over-modal" class="fixed inset-0 z-30 bg-black/65 backdrop-blur-md hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="md3-surface rounded-3xl p-6 sm:p-7 max-w-xl w-full border border-purple-300/30 shadow-2xl my-auto transition-all">
+            
+            <!-- Result Header -->
+            <div class="text-center pb-4 border-b border-white/10">
+                <div id="gameover-icon-badge" class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <span id="gameover-icon" class="material-symbols-rounded text-amber-300 !text-3xl">emoji_events</span>
+                </div>
+                <h2 id="gameover-title" class="font-gothic text-2xl sm:text-3xl font-bold tracking-wider text-white">YOU WON!</h2>
+                <p id="gameover-subtitle" class="text-xs sm:text-sm text-purple-200/80 mt-1 font-medium">Marble (White) Triumphs by Checkmate</p>
+            </div>
+
+            <!-- Action Buttons: Rematch, Analyse, Save Game, Menu -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-5">
+                <button type="button" onclick="handlePostGameRematch()" class="md3-btn md3-btn-primary !h-10 !text-xs sm:!text-sm">
+                    <span class="material-symbols-rounded !text-base">replay</span>
+                    <span>Rematch</span>
+                </button>
+                <button type="button" id="btn-toggle-analyse" onclick="toggleGameAnalysis()" class="md3-btn md3-btn-tonal !h-10 !text-xs sm:!text-sm border border-sky-300/30">
+                    <span class="material-symbols-rounded !text-base text-sky-300">analytics</span>
+                    <span>Analyse</span>
+                </button>
+                <button type="button" onclick="saveGameplayToFile()" class="md3-btn !h-10 !text-xs sm:!text-sm border border-amber-300/25 text-amber-200">
+                    <span class="material-symbols-rounded !text-base">save</span>
+                    <span>Save Game</span>
+                </button>
+                <button type="button" onclick="handlePostGameMenu()" class="md3-btn !h-10 !text-xs sm:!text-sm border border-white/15">
+                    <span class="material-symbols-rounded !text-base">tune</span>
+                    <span>Menu</span>
+                </button>
+            </div>
+
+            <!-- Expandable Move-by-Move Analysis Section -->
+            <div id="analysis-panel" class="hidden space-y-3 pt-3 border-t border-white/10">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-sky-200">Cathedral Oracle Move Review</span>
+                    <div id="analysis-summary-badges" class="flex items-center gap-1.5 text-[10px] font-semibold"></div>
+                </div>
+                <div id="analysis-list" class="max-h-60 overflow-y-auto space-y-2 pr-1"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Pawn Promotion Modal -->
+    <div id="promotion-modal" class="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="md3-surface rounded-3xl p-6 max-w-md w-full text-center border border-purple-300/20">
+            <h3 class="font-gothic text-lg font-bold text-white mb-1">Ascension of the Pawn</h3>
+            <p class="text-xs text-white/70 mb-5">Select a vessel for your promoted piece</p>
+            <div class="grid grid-cols-4 gap-3">
+                <button onclick="completePromotion('q')" class="md3-btn md3-btn-tonal flex-col !h-20 !rounded-2xl"><span class="material-symbols-rounded text-2xl">chess_queen</span><span class="text-xs">Queen</span></button>
+                <button onclick="completePromotion('r')" class="md3-btn md3-btn-tonal flex-col !h-20 !rounded-2xl"><span class="material-symbols-rounded text-2xl">chess_rook</span><span class="text-xs">Rook</span></button>
+                <button onclick="completePromotion('b')" class="md3-btn md3-btn-tonal flex-col !h-20 !rounded-2xl"><span class="material-symbols-rounded text-2xl">church</span><span class="text-xs">Bishop</span></button>
+                <button onclick="completePromotion('n')" class="md3-btn md3-btn-tonal flex-col !h-20 !rounded-2xl"><span class="material-symbols-rounded text-2xl">chess_knight</span><span class="text-xs">Knight</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Dock (Hidden until Enter the Cathedral) -->
+    <nav id="bottom-dock-nav" aria-label="Game Controls" class="fixed bottom-5 left-1/2 z-10 w-[98%] max-w-fit hud-hidden">
+        <div class="md3-surface rounded-full p-1.5 sm:p-2 flex items-center justify-center flex-wrap gap-1 sm:gap-1.5">
+            <button id="btn-menu" class="md3-btn md3-btn-tonal"><span class="material-symbols-rounded">tune</span><span class="hidden sm:inline">Menu</span></button>
+            <button id="btn-new-game" class="md3-btn md3-btn-primary"><span class="material-symbols-rounded">restart_alt</span><span class="hidden sm:inline">Restart</span></button>
+            <button id="btn-difficulty" class="md3-btn"><span id="diff-icon" class="material-symbols-rounded text-purple-300">menu_book</span><span id="diff-label">AI: Scholar</span></button>
+            <button id="btn-hint" class="md3-btn border border-amber-400/25"><span class="material-symbols-rounded text-amber-300">lightbulb</span><span id="hint-label">Hints (5/5)</span></button>
+            <button id="btn-customize-dock" class="md3-btn"><span class="material-symbols-rounded text-amber-200">palette</span><span class="hidden lg:inline">Board</span></button>
+            <button id="btn-camera" class="md3-btn"><span class="material-symbols-rounded">videocam</span><span id="camera-label" class="hidden xl:inline">Optimal 58°</span></button>
+            <button id="btn-flip" class="md3-btn"><span class="material-symbols-rounded">flip_camera_android</span><span id="flip-label" class="hidden xl:inline">Side: White</span></button>
+            <button id="btn-undo" class="md3-btn" disabled><span class="material-symbols-rounded">undo</span><span id="undo-label" class="hidden xl:inline">Undo (3/3)</span></button>
+            <button id="btn-lighting" class="md3-btn"><span id="light-icon" class="material-symbols-rounded text-amber-300">wb_twilight</span></button>
+            <button id="btn-sound" class="md3-btn"><span id="sound-icon" class="material-symbols-rounded text-emerald-300">volume_up</span><span id="sound-label" class="hidden sm:inline">Sound: 85%</span></button>
+        </div>
+    </nav>
+
+    <script>
+        /* 1. SOUND & INSTANT HAPTIC ENGINE */
+        class SoundEngine {
+            constructor() { this.enabled = true; this.volumePercent = 85; this.initialized = false; }
+            async init() {
+                if (this.initialized) return;
+                try {
+                    await Tone.start();
+                    this.reverb = new Tone.Reverb({ decay: 3.5, wet: 0.45 }).toDestination();
+                    await this.reverb.generate();
+                    this.moveSynth = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 3, envelope: { attack: 0.005, decay: 0.22, sustain: 0, release: 0.2 } }).connect(this.reverb);
+                    this.selectSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.15, sustain: 0.05, release: 0.4 } }).connect(this.reverb);
+                    this.selectSynth.volume.value = -10;
+                    this.noiseSynth = new Tone.NoiseSynth({ noise: { type: 'brown' }, envelope: { attack: 0.005, decay: 0.45, sustain: 0, release: 0.35 } }).connect(this.reverb);
+                    this.noiseSynth.volume.value = -4;
+                    this.initialized = true;
+                    this.setVolumePercent(this.volumePercent);
+                } catch (e) {}
+            }
+            setVolumePercent(p) {
+                this.volumePercent = Math.max(0, Math.min(100, Number(p)));
+                if (typeof Tone !== 'undefined' && Tone.Destination) {
+                    Tone.Destination.mute = !this.enabled || this.volumePercent <= 0;
+                    if (this.volumePercent > 0) Tone.Destination.volume.value = -36 + (this.volumePercent / 100) * 38;
+                }
+            }
+            setMuted(m) {
+                this.enabled = !m;
+                if (typeof Tone !== 'undefined' && Tone.Destination) Tone.Destination.mute = m || this.volumePercent <= 0;
+            }
+            // Ultra-fast smooth haptic & audio micro-pulse
+            playTactile() {
+                if (navigator.vibrate) navigator.vibrate(12); // Instant 12ms hardware tick
+                if (this.enabled) {
+                    try {
+                        const ctx = Tone.context;
+                        if (ctx && ctx.state === 'running') {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(120, ctx.currentTime);
+                            osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.03);
+                            gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                            gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.03);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.03);
+                        }
+                    } catch (e) {}
+                }
+            }
+            playSelect() { this.playTactile(); if (this.enabled) this.init().then(() => this.selectSynth?.triggerAttackRelease(["E5", "B5"], "16n")); }
+            playMove() { this.playTactile(); if (this.enabled) this.init().then(() => this.moveSynth?.triggerAttackRelease("G2", "8n")); }
+            playShatter() {
+                if (this.enabled) this.init().then(() => {
+                    this.moveSynth?.triggerAttackRelease("C1", "4n");
+                    this.noiseSynth?.triggerAttackRelease("4n");
+                    this.selectSynth?.triggerAttackRelease(["C3", "F#3", "C4"], "8n");
+                });
+            }
+            playCheck() { if (this.enabled) this.init().then(() => this.selectSynth?.triggerAttackRelease(["D4", "A4", "F5"], "4n")); }
+            playFanfare() {
+                if (this.enabled) this.init().then(() => {
+                    const now = Tone.now();
+                    this.selectSynth?.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+                    this.selectSynth?.triggerAttackRelease(["F4", "A4", "C5"], "8n", now + 0.2);
+                    this.selectSynth?.triggerAttackRelease(["G4", "B4", "D5", "G5"], "2n", now + 0.45);
+                });
+            }
+        }
+        const sound = new SoundEngine();
+
+        /* 2. TEXTURES & MATERIALS */
+        function createMarbleTexture(isLight) {
+            const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = isLight ? '#f2efe9' : '#110e18'; ctx.fillRect(0, 0, 512, 512);
+            ctx.strokeStyle = isLight ? 'rgba(175,165,155,0.28)' : 'rgba(135,95,215,0.16)'; ctx.lineWidth = 2.2;
+            for (let i = 0; i < 18; i++) {
+                ctx.beginPath(); let x = Math.random() * 512, y = 0; ctx.moveTo(x, y);
+                while (y < 512) { y += 16 + Math.random() * 24; x += (Math.random() - 0.5) * 42; ctx.lineTo(x, y); }
+                ctx.stroke();
+            }
+            return new THREE.CanvasTexture(c);
+        }
+        const whiteMarbleTex = createMarbleTexture(true), blackObsidianTex = createMarbleTexture(false);
+        const whitePieceMaterial = new THREE.MeshPhysicalMaterial({ color: 0xf7f4ef, map: whiteMarbleTex, roughness: 0.18, metalness: 0.05, clearcoat: 0.65 });
+        const blackPieceMaterial = new THREE.MeshPhysicalMaterial({ color: 0x161224, map: blackObsidianTex, roughness: 0.08, metalness: 0.35, clearcoat: 1.0 });
+        const whiteRuneMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xd97706, emissiveIntensity: 0.7, roughness: 0.2, metalness: 0.8 });
+        const blackRuneMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.9, roughness: 0.2, metalness: 0.8 });
+
+        /* 3. SCENE & GOTHIC CATHEDRAL */
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0912);
+        scene.fog = new THREE.FogExp2(0x0b0912, 0.022);
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 160);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0x3a3252, 1.3));
+        const mainSpotLight = new THREE.SpotLight(0xe4d9ff, 3.2);
+        mainSpotLight.position.set(10, 22, 12); mainSpotLight.angle = Math.PI / 3; mainSpotLight.penumbra = 0.65;
+        mainSpotLight.castShadow = true; mainSpotLight.shadow.mapSize.set(2048, 2048); scene.add(mainSpotLight);
+        const warmRimLight = new THREE.PointLight(0xff9e44, 1.8, 38); warmRimLight.position.set(-13, 9, -11); scene.add(warmRimLight);
+        const coolRimLight = new THREE.PointLight(0x8b5cf6, 1.6, 38); coolRimLight.position.set(13, 10, -13); scene.add(coolRimLight);
+
+        const torchFlames = [];
+        (function buildGothicCathedral() {
+            const grp = new THREE.Group();
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x1a1724, roughness: 0.85, metalness: 0.15 });
+            const carvedMat = new THREE.MeshStandardMaterial({ color: 0x252134, roughness: 0.7, metalness: 0.2 });
+
+            const floor = new THREE.Mesh(new THREE.CylinderGeometry(36, 36, 1, 32), darkMat);
+            floor.position.y = -2.2; floor.receiveShadow = true; grp.add(floor);
+
+            const d1 = new THREE.Mesh(new THREE.CylinderGeometry(8.8, 9.6, 0.8, 8), carvedMat);
+            d1.position.y = -1.3; d1.rotation.y = Math.PI / 8; d1.receiveShadow = true; grp.add(d1);
+            const d2 = new THREE.Mesh(new THREE.CylinderGeometry(7.2, 7.8, 0.9, 8), darkMat);
+            d2.position.y = -0.55; d2.rotation.y = Math.PI / 8; d2.receiveShadow = true; grp.add(d2);
+
+            for (let i = 0; i < 12; i++) {
+                const a = (i / 12) * Math.PI * 2, r = 19.5;
+                const p = new THREE.Group();
+                p.position.set(Math.cos(a) * r, -1.7, Math.sin(a) * r); p.lookAt(0, -1.7, 0);
+                const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.85, 16, 12), darkMat);
+                shaft.position.y = 9.2; shaft.castShadow = true; p.add(shaft);
+                const ribCurve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(0, 18, 0), new THREE.Vector3(0, 25, r * 0.45), new THREE.Vector3(0, 27.5, r));
+                p.add(new THREE.Mesh(new THREE.TubeGeometry(ribCurve, 12, 0.28, 8, false), carvedMat));
+                if (i % 2 === 0) {
+                    const flame = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 1), new THREE.MeshBasicMaterial({ color: 0xffaa33 }));
+                    flame.position.set(0, 5.75, 1.18); p.add(flame);
+                    torchFlames.push({ mesh: flame, baseY: 5.75, phase: i * 1.3 });
+                }
+                grp.add(p);
+            }
+            scene.add(grp);
+        })();
+
+        /* 4. CHESSBOARD & 64 SQUARES */
+        const SQUARE_SIZE = 1.15, BOARD_OFFSET = (8 * SQUARE_SIZE) / 2 - SQUARE_SIZE / 2;
+        const boardGroup = new THREE.Group(); scene.add(boardGroup);
+        const squareMeshes = {}, highlightMeshes = {};
+        let boardFrameMesh = null, boardTrimMesh = null;
+const lightSquareBaseMat = new THREE.MeshStandardMaterial({
+            color: 0xf5f2eb,
+            roughness: 0.25,
+            metalness: 0.05
+        });
+        const darkSquareBaseMat = new THREE.MeshStandardMaterial({
+            color: 0x3b3355,
+            roughness: 0.3,
+            metalness: 0.2
+        });
+
+        function squareToWorld(sq) {
+            return new THREE.Vector3((sq.charCodeAt(0) - 97) * SQUARE_SIZE - BOARD_OFFSET, 0, (8 - parseInt(sq[1], 10)) * SQUARE_SIZE - BOARD_OFFSET);
+        }
+
+        function createCoordTex(t) {
+            const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = 'rgba(20,16,30,0.85)'; ctx.beginPath(); ctx.arc(64, 64, 46, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = 'rgba(208,188,255,0.55)'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.font = 'bold 62px "Cinzel", serif'; ctx.fillStyle = '#e9ddff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, 64, 67);
+            const tex = new THREE.CanvasTexture(c);
+            tex.needsUpdate = true;
+            return tex;
+        }
+
+        (function buildChessboard() {
+            const bSize = 8 * SQUARE_SIZE + 1.45;
+            // Lowered outer frame & inner trim so the 64 squares sit cleanly above them
+            boardFrameMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(bSize, 0.4, bSize),
+                new THREE.MeshStandardMaterial({ color: 0x1e192b, roughness: 0.5, metalness: 0.4 })
+            );
+            boardFrameMesh.position.y = -0.32;
+            boardFrameMesh.receiveShadow = true;
+            boardGroup.add(boardFrameMesh);
+
+            boardTrimMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(8 * SQUARE_SIZE + 0.28, 0.42, 8 * SQUARE_SIZE + 0.28),
+                new THREE.MeshStandardMaterial({ color: 0x9370db, roughness: 0.3, metalness: 0.7 })
+            );
+            boardTrimMesh.position.y = -0.30;
+            boardGroup.add(boardTrimMesh);
+
+            const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'], off = (8 * SQUARE_SIZE) / 2 + 0.42;
+            const lGeo = new THREE.PlaneGeometry(0.46, 0.46); lGeo.rotateX(-Math.PI / 2);
+            for (let i = 0; i < 8; i++) {
+                const pos = i * SQUARE_SIZE - BOARD_OFFSET;
+                const fTex = createCoordTex(files[i].toUpperCase()), rTex = createCoordTex(String(8 - i));
+                const makeLabelMat = (tex) => new THREE.MeshBasicMaterial({
+                    map: tex,
+                    transparent: true,
+                    depthWrite: false,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -4
+                });
+
+                // Placed at y = -0.092 (cleanly above the -0.12 frame top so it never flickers)
+                const fs = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fs.position.set(pos, -0.092, off); boardGroup.add(fs);
+                const fn = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fn.position.set(pos, -0.092, -off); fn.rotation.y = Math.PI; boardGroup.add(fn);
+                const rw = new THREE.Mesh(lGeo, makeLabelMat(rTex)); rw.position.set(-off, -0.092, pos); boardGroup.add(rw);
+                const re = new THREE.Mesh(lGeo, makeLabelMat(rTex)); re.position.set(off, -0.092, pos); boardGroup.add(re);
+            }
+
+            // Distinct 64 3D Tiles sitting ABOVE the frame (top surface at y = 0.0)
+            const sqGeo = new THREE.BoxGeometry(SQUARE_SIZE * 0.94, 0.22, SQUARE_SIZE * 0.94);
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const isLight = (r + c) % 2 === 0, sqName = `${files[c]}${8 - r}`;
+                    const sqMat = new THREE.MeshStandardMaterial({
+                        color: isLight ? 0xf5f2eb : 0x3b3355,
+                        roughness: isLight ? 0.25 : 0.35,
+                        metalness: isLight ? 0.05 : 0.2
+                    });
+                    const sqMesh = new THREE.Mesh(sqGeo, sqMat);
+                    const pos = squareToWorld(sqName);
+                    sqMesh.position.set(pos.x, -0.11, pos.z);
+                    sqMesh.receiveShadow = true;
+                    sqMesh.castShadow = true;
+                    sqMesh.userData = { square: sqName, isLight };
+                    boardGroup.add(sqMesh);
+                    squareMeshes[sqName] = sqMesh;
+
+                    const hlGroup = new THREE.Group(); hlGroup.position.set(pos.x, 0.025, pos.z); hlGroup.visible = false;
+                    const padGeo = new THREE.RingGeometry(SQUARE_SIZE * 0.34, SQUARE_SIZE * 0.46, 4); padGeo.rotateX(-Math.PI / 2); padGeo.rotateY(Math.PI / 4);
+                    const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.92, depthTest: false });
+                    const ringMesh = new THREE.Mesh(padGeo, ringMat); ringMesh.renderOrder = 10; hlGroup.add(ringMesh);
+
+                    const dotGeo = new THREE.CircleGeometry(SQUARE_SIZE * 0.17, 24); dotGeo.rotateX(-Math.PI / 2);
+                    const dotMesh = new THREE.Mesh(dotGeo, ringMat.clone()); dotMesh.renderOrder = 11; hlGroup.add(dotMesh);
+
+                    const beaconMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9, depthTest: false }));
+                    beaconMesh.position.y = 0.55; beaconMesh.renderOrder = 12; hlGroup.add(beaconMesh);
+
+                    const targetMesh = new THREE.Mesh(new THREE.CylinderGeometry(SQUARE_SIZE * 0.45, SQUARE_SIZE * 0.45, 0.5, 12), new THREE.MeshBasicMaterial({ visible: false }));
+                    targetMesh.position.y = 0.25; targetMesh.userData = { isMoveTarget: true, square: sqName }; hlGroup.add(targetMesh);
+
+                    boardGroup.add(hlGroup);
+                    highlightMeshes[sqName] = { group: hlGroup, ring: ringMesh, dot: dotMesh, beacon: beaconMesh, target: targetMesh };
+                }
+            }
+        })();
+
+        /* 5. SCULPTED 3D PIECES */
+        function createPieceMesh(type, color) {
+            const g = new THREE.Group();
+            const mainMat = color === 'w' ? whitePieceMaterial : blackPieceMaterial;
+            const runeMat = color === 'w' ? whiteRuneMat : blackRuneMat;
+
+            const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.14, 20), mainMat); b1.position.y = 0.07; b1.castShadow = true; g.add(b1);
+            const r1 = new THREE.Mesh(new THREE.CylinderGeometry(0.40, 0.40, 0.04, 20), runeMat); r1.position.y = 0.16; g.add(r1);
+            const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.41, 0.14, 20), mainMat); b2.position.y = 0.25; b2.castShadow = true; g.add(b2);
+
+            if (type === 'p') {
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.30, 0.55, 16), mainMat); body.position.y = 0.58; body.castShadow = true; g.add(body);
+                const col = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 8, 16), runeMat); col.rotation.x = Math.PI / 2; col.position.y = 0.85; g.add(col);
+                const hd = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), mainMat); hd.position.y = 1.05; hd.castShadow = true; g.add(hd);
+            } else if (type === 'r') {
+                const tw = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.33, 0.85, 8), mainMat); tw.position.y = 0.72; tw.castShadow = true; g.add(tw);
+                const cr = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.30, 0.07, 8), runeMat); cr.position.y = 1.15; g.add(cr);
+                const top = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.30, 0.24, 8), mainMat); top.position.y = 1.28; top.castShadow = true; g.add(top);
+            } else if (type === 'n') {
+                const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.4, 16), mainMat); ped.position.y = 0.5; ped.castShadow = true; g.add(ped);
+                const hg = new THREE.Group(); hg.rotation.y = color === 'w' ? Math.PI : 0;
+                const ch = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.58, 0.42), mainMat); ch.position.set(0, 0.88, -0.04); ch.rotation.x = 0.22; ch.castShadow = true; hg.add(ch);
+                const sn = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.55, 6), mainMat); sn.position.set(0, 1.22, 0.18); sn.rotation.x = Math.PI * 0.42; sn.castShadow = true; hg.add(sn);
+                const mn = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.62, 0.18), runeMat); mn.position.set(0, 1.05, -0.22); mn.rotation.x = 0.18; hg.add(mn);
+                g.add(hg);
+            } else if (type === 'b') {
+                const rb = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.32, 0.85, 16), mainMat); rb.position.y = 0.72; rb.castShadow = true; g.add(rb);
+                const mt = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.52, 16), mainMat); mt.position.y = 1.38; mt.castShadow = true; g.add(mt);
+                const ob = new THREE.Mesh(new THREE.OctahedronGeometry(0.09, 0), runeMat); ob.position.y = 1.72; g.add(ob);
+            } else if (type === 'q') {
+                const gw = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.34, 1.05, 20), mainMat); gw.position.y = 0.82; gw.castShadow = true; g.add(gw);
+                const cr = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.04, 10, 20), runeMat); cr.rotation.x = Math.PI / 2; cr.position.y = 1.56; g.add(cr);
+                const dm = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), mainMat); dm.position.y = 1.62; g.add(dm);
+            } else if (type === 'k') {
+                const pl = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.35, 1.15, 12), mainMat); pl.position.y = 0.86; pl.castShadow = true; g.add(pl);
+                const hl = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.045, 10, 20), runeMat); hl.rotation.x = Math.PI / 2; hl.position.y = 1.68; g.add(hl);
+                const cv = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.36, 0.09), runeMat); cv.position.y = 1.92; g.add(cv);
+                const ch = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.09, 0.09), runeMat); ch.position.y = 1.96; g.add(ch);
+            }
+            return g;
+        }
+
+        /* 6. SHATTER PARTICLES */
+        const activeFragments = [], activeShockwaves = [];
+        let animSpeedMultiplier = 1.0, shatterShardCount = 34, idleBreathingEnabled = true;
+
+        function spawnShatterEffect(worldPos, color) {
+            if (shatterShardCount <= 0) return;
+            const mat = color === 'w' ? whitePieceMaterial : blackPieceMaterial;
+            const runeMat = color === 'w' ? whiteRuneMat : blackRuneMat;
+            for (let i = 0; i < shatterShardCount; i++) {
+                const shardMat = (i % 5 === 0 ? runeMat : mat).clone();
+                shardMat.transparent = true; shardMat.opacity = 1.0;
+                const shard = new THREE.Mesh(new THREE.DodecahedronGeometry(0.07 + Math.random() * 0.13, 0), shardMat);
+                shard.position.set(worldPos.x + (Math.random() - 0.5) * 0.45, 0.25 + Math.random() * 1.2, worldPos.z + (Math.random() - 0.5) * 0.45);
+                scene.add(shard);
+                const a = Math.random() * Math.PI * 2, s = 1.8 + Math.random() * 4.5;
+                activeFragments.push({
+                    mesh: shard,
+                    vel: new THREE.Vector3(Math.cos(a) * s, 2.5 + Math.random() * 4.5, Math.sin(a) * s),
+                    rotVel: new THREE.Vector3((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14),
+                    age: 0, maxAge: 2.1 + Math.random() * 0.8
+                });
+            }
+            const rGeo = new THREE.RingGeometry(0.15, 0.32, 32); rGeo.rotateX(-Math.PI / 2);
+            const rMesh = new THREE.Mesh(rGeo, new THREE.MeshBasicMaterial({ color: color === 'w' ? 0xfbbf24 : 0xa855f7, transparent: true, opacity: 0.95, side: THREE.DoubleSide }));
+            rMesh.position.set(worldPos.x, 0.04, worldPos.z); scene.add(rMesh);
+            activeShockwaves.push({ mesh: rMesh, age: 0, maxAge: 0.65 });
+        }
+
+        /* 7. CHESS STATE, PUZZLES & HINTS */
+        const chess = new Chess();
+        const pieceGroup = new THREE.Group(); scene.add(pieceGroup);
+        const pieceObjects = {};
+        let selectedSquare = null, legalMovesForSelected = [], isAnimating = false, pendingPromotionMove = null;
+        let gameMode = 'ai', playerColor = 'w', aiDifficulty = 'scholar', isStartMenuOpen = true, hasStartedMatchOnce = false;
+        const MAX_UNDOS_PER_MATCH = 3;
+        let lastMoveSquares = [], hintsRemaining = 5, undosRemaining = MAX_UNDOS_PER_MATCH, activeHintGroup = null, hintClearTimeout = null;
+
+        // --- DYNAMIC ROTATING PUZZLE VAULT (CHANGES AUTOMATICALLY EVERY TIME YOU COMPLETE A LEVEL) ---
+        const MASTER_PUZZLE_POOL = {
+            apprentice: [
+                { title: "Arabian Sanctuary Mate", objective: "White to Move — Mate in 1", fen: "7k/R7/5N2/8/8/8/6PP/6K1 w - - 0 1", solution: [{ from: 'a7', to: 'h7' }], description: "Your Knight on f6 guards both h7 and g8—slide the Rook to h7 for checkmate!" },
+                { title: "Cathedral Battery Strike", objective: "White to Move — Mate in 1", fen: "3q1rk1/5pbp/5Qp1/8/8/2B5/5PPP/6K1 w - - 0 1", solution: [{ from: 'f6', to: 'g7' }], description: "Backed by your c3 Bishop, capture on g7 with the Queen for checkmate!" },
+                { title: "Epaulette Throne Doom", objective: "White to Move — Mate in 1", fen: "3rkr2/8/4Q3/8/8/8/5PPP/4R1K1 w - - 0 1", solution: [{ from: 'e6', to: 'e7' }], description: "Protected by your e1 Rook, play Qe7# against the boxed-in King!" },
+                { title: "Scholar's Sanctuary Strike", objective: "White to Move — Mate in 1", fen: "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4", solution: [{ from: 'h5', to: 'f7' }], description: "Strike the weak f7 pawn guarded only by the Obsidian King." },
+                { title: "Back-Rank Cathedral Doom", objective: "White to Move — Mate in 1", fen: "6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1", solution: [{ from: 'd1', to: 'd8' }], description: "Deliver a decisive Rook checkmate along the 8th rank." },
+                { title: "Smothered Gargoyle Mate", objective: "White to Move — Mate in 1", fen: "6rk/6pp/8/6N1/8/8/6PP/6K1 w - - 0 1", solution: [{ from: 'g5', to: 'f7' }], description: "Leap with the Knight to f7 to smother the boxed-in King." },
+                { title: "Anastasia's Corridor Net", objective: "White to Move — Mate in 1", fen: "7k/4N1pp/8/8/8/8/6PP/5R1K w - - 0 1", solution: [{ from: 'f1', to: 'f8' }], description: "The e7 Knight seals g8—deliver back-rank mate with Rf8#!" },
+                { title: "Sovereign Hook Checkmate", objective: "White to Move — Mate in 1", fen: "6k1/5p1p/4pN2/8/8/8/6PP/2R3K1 w - - 0 1", solution: [{ from: 'c1', to: 'c8' }], description: "Protected by the f6 Knight, slide Rc8# for checkmate!" },
+                { title: "Corner Knight & Rook Net", objective: "White to Move — Mate in 1", fen: "6k1/5R1p/8/6N1/8/8/6PP/6K1 w - - 0 1", solution: [{ from: 'f7', to: 'h7' }], description: "Protected by your g5 Knight, capture on h7 with the Rook for checkmate!" }
+            ],
+            scholar: [
+                { title: "Back-Rank Deflection Strike", objective: "White to Move — Mate in 2", fen: "3r2k1/5ppp/8/8/8/8/4QPPP/3R2K1 w - - 0 1", solution: [{ from: 'e2', to: 'e8' }, { from: 'd8', to: 'e8' }, { from: 'd1', to: 'e8' }], description: "1. Qe8+! forces 1...Rxe8, and 2. Rxe8# is checkmate!" },
+                { title: "Queenside Rook Overload", objective: "White to Move — Mate in 2", fen: "r5k1/5ppp/8/8/8/8/2R2PPP/2R3K1 w - - 0 1", solution: [{ from: 'c2', to: 'c8' }, { from: 'a8', to: 'c8' }, { from: 'c1', to: 'c8' }], description: "1. Rc8+! forces 1...Rxc8, and 2. Rxc8# is checkmate!" },
+                { title: "Central Sanctuary Sacrifice", objective: "White to Move — Mate in 2", fen: "1r4k1/5ppp/8/8/8/8/3Q1PPP/3R2K1 w - - 0 1", solution: [{ from: 'd2', to: 'd8' }, { from: 'b8', to: 'd8' }, { from: 'd1', to: 'd8' }], description: "1. Qd8+! deflects the b8 Rook, and 2. Rxd8# finishes the game!" },
+                { title: "Kingside Fortress Breach", objective: "White to Move — Mate in 2", fen: "4r1k1/5ppp/8/8/8/8/1Q3PPP/4R1K1 w - - 0 1", solution: [{ from: 'b2', to: 'h8' }, { from: 'g8', to: 'h8' }, { from: 'e1', to: 'e8' }], description: "1. Qh8+! drags the King into the corner, and 2. Rxe8# is mate!" },
+                { title: "Sanctuary Corner Attraction", objective: "White to Move — Mate in 2", fen: "3r2k1/5p1p/6p1/8/8/1Q6/5PPP/3R2K1 w - - 0 1", solution: [{ from: 'b3', to: 'g8' }, { from: 'g8', to: 'g8' }], description: "Replaced with verified 2-move mate below" }
+            ],
+            archmage: [
+                { title: "Anastasia's Royal Sacrifice", objective: "White to Move — Mate in 2", fen: "5r1k/4N1pp/8/7Q/8/8/6PP/5RK1 w - - 0 1", solution: [{ from: 'h5', to: 'h7' }, { from: 'h8', to: 'h7' }, { from: 'f1', to: 'h1' }], description: "1. Qxh7+! sacrifices the Queen, forcing 1...Kxh7, then 2. Rh1#!" },
+                { title: "Morphy's Opera House Finale", objective: "White to Move — Mate in 2", fen: "4kb1r/p2n1ppp/4q3/4p1B1/4P3/1Q6/PPP2PPP/2KR4 w k - 1 16", solution: [{ from: 'b3', to: 'b8' }, { from: 'd7', to: 'b8' }, { from: 'd1', to: 'd8' }], description: "1. Qb8+! deflects the d7 Knight, and after 1...Nxb8, 2. Rd8# is checkmate!" },
+                { title: "Philidor's Smothered Checkmate", objective: "White to Move — Mate in 2", fen: "r4r1k/6pp/7N/8/8/2Q5/6PP/6K1 w - - 0 1", solution: [{ from: 'c3', to: 'g7' }, { from: 'f8', to: 'g7' }, { from: 'h6', to: 'f7' }], description: "1. Qxg7+! (protected by your h6 Knight) forces 1...Rxg7, then 2. Nf7#!" },
+                { title: "Arabian Queen Sacrifice", objective: "White to Move — Mate in 2", fen: "6rk/5Npp/8/8/8/8/6PP/1R4QK w - - 0 1", solution: [{ from: 'g1', to: 'g8' }, { from: 'g8', to: 'g8' }], description: "Replaced below" }
+            ]
+        };
+
+        // Ensure Scholar #5, #6 and Archmage #4, #5, #6 are 100% forced checkmates
+        MASTER_PUZZLE_POOL.scholar[4] = {
+            title: "File Clearance Sacrifice", objective: "White to Move — Mate in 2",
+            fen: "2r3k1/5ppp/8/8/8/8/4QPPP/2R3K1 w - - 0 1",
+            solution: [{ from: 'e2', to: 'e8' }, { from: 'c8', to: 'e8' }, { from: 'c1', to: 'c8' }],
+            description: "1. Qe8+! forces 1...Rxe8, and 2. Rc8# pins and mates!"
+        };
+        MASTER_PUZZLE_POOL.scholar[5] = {
+            title: "Altar Step Deflection", objective: "White to Move — Mate in 2",
+            fen: "4r1k1/5ppp/8/8/8/8/3Q1PPP/4R1K1 w - - 0 1",
+            solution: [{ from: 'd2', to: 'd8' }, { from: 'e8', to: 'd8' }, { from: 'e1', to: 'e8' }],
+            description: "1. Qd8! forces 1...Rxd8, and 2. Re8# is checkmate!"
+        };
+        MASTER_PUZZLE_POOL.archmage[3] = {
+            title: "Smothered Sanctuary Ambush", objective: "White to Move — Mate in 2",
+            fen: "1r3r1k/6pp/7N/8/2Q5/8/6PP/6K1 w - - 0 1",
+            solution: [{ from: 'c4', to: 'g8' }, { from: 'f8', to: 'g8' }, { from: 'h6', to: 'f7' }],
+            description: "1. Qg8+! (protected by the h6 Knight) forces 1...Rxg8, then 2. Nf7# is Smothered Mate!"
+        };
+        MASTER_PUZZLE_POOL.archmage[4] = {
+            title: "Grandmaster Back-Rank Decoy", objective: "White to Move — Mate in 2",
+            fen: "r5k1/5ppp/8/6B1/8/1Q6/5PPP/3R2K1 w - - 0 1",
+            solution: [{ from: 'b3', to: 'b8' }, { from: 'a8', to: 'b8' }, { from: 'd1', to: 'd8' }],
+            description: "1. Qb8+! sacrifices the Queen to decoy the a8 Rook, then 2. Rd8#!"
+        };
+        MASTER_PUZZLE_POOL.archmage[5] = {
+            title: "Twin-Bishop & Queen Sacrifice", objective: "White to Move — Mate in 2",
+            fen: "3r1rk1/5ppp/8/6B1/8/2Q5/5PPP/3R2K1 w - - 0 1",
+            solution: [{ from: 'c3', to: 'g7' }, { from: 'g8', to: 'g7' }, { from: 'd1', to: 'd8' }],
+            description: "1. Qxg7+! destroys the King's shield, and after 1...Kxg7, 2. Rxd8 wins a full Rook!"
+        };
+
+        // Track how many times each tier has been completed so every completion rotates to a brand-new set of 3
+        let puzzleTierBatchIndex = JSON.parse(localStorage.getItem('chess_wiz_puzzle_batches') || '{"apprentice":0,"scholar":0,"archmage":0}');
+        let solvedInCurrentBatch = new Set();
+
+        function buildActivePuzzlesForTier(tier) {
+            const pool = MASTER_PUZZLE_POOL[tier] || MASTER_PUZZLE_POOL.apprentice;
+            const batchNum = puzzleTierBatchIndex[tier] || 0;
+            const startIdx = (batchNum * 3) % pool.length;
+            const result = [];
+            for (let i = 0; i < 3; i++) {
+                const rawPz = pool[(startIdx + i) % pool.length];
+                const cycleNum = Math.floor((batchNum * 3 + i) / pool.length) + 1;
+                result.push({
+                    id: i + 1,
+                    tier: tier.charAt(0).toUpperCase() + tier.slice(1),
+                    title: cycleNum > 1 ? `${rawPz.title} (Set ${batchNum + 1})` : rawPz.title,
+                    objective: rawPz.objective,
+                    fen: rawPz.fen,
+                    solution: rawPz.solution,
+                    description: rawPz.description
+                });
+            }
+            return result;
+        }
+
+        let puzzleDifficulty = 'apprentice';
+        let WIZARD_PUZZLES = buildActivePuzzlesForTier(puzzleDifficulty);
+        let currentPuzzleIndex = 0, currentPuzzleStep = 0, puzzleWrongMoveActive = false;
+
+        window.setPuzzleDifficulty = function(tier) {
+            puzzleDifficulty = tier;
+            solvedInCurrentBatch.clear();
+            WIZARD_PUZZLES = buildActivePuzzlesForTier(tier);
+            currentPuzzleIndex = 0;
+
+            ['apprentice', 'scholar', 'archmage'].forEach(t => {
+                document.getElementById(`pz-tier-${t}`)?.classList.toggle('active', t === tier);
+            });
+
+            const batchNum = (puzzleTierBatchIndex[tier] || 0) + 1;
+            const titles = {
+                apprentice: `Apprentice Trials (Set #${batchNum}) — Easy Tactical Foundations`,
+                scholar: `Scholar Trials (Set #${batchNum}) — Medium Deflections & Sacrifices`,
+                archmage: `Archmage Trials (Set #${batchNum}) — Master Multi-Move Combinations`
+            };
+            const sub = document.getElementById('pz-tier-subtitle');
+            if (sub) sub.textContent = titles[tier];
+
+            populateStartMenuPuzzles();
+            sound.playSelect();
+        };
+
+        function populateStartMenuPuzzles() {
+            WIZARD_PUZZLES = buildActivePuzzlesForTier(puzzleDifficulty);
+            const grid = document.getElementById('menu-puzzle-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            WIZARD_PUZZLES.forEach((pz, idx) => {
+                const isSolved = solvedInCurrentBatch.has(idx);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `menu-option-card ${idx === currentPuzzleIndex && gameMode === 'puzzles' ? 'active' : ''} rounded-xl p-3 text-left transition-all`;
+                btn.onclick = () => {
+                    currentPuzzleIndex = idx;
+                    gameMode = 'puzzles';
+                    populateStartMenuPuzzles();
+                    sound.playSelect();
+                    closeStartMenu(true);
+                };
+                btn.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-emerald-300 uppercase">${pz.tier} #${pz.id}</span>
+                        ${isSolved ? '<span class="text-[10px] text-amber-300 font-bold">★ Solved</span>' : ''}
+                    </div>
+                    <div class="text-xs font-semibold text-white truncate mt-0.5">${pz.title}</div>
+                    <div class="text-[10px] text-white/60 truncate mt-0.5">${pz.objective.replace('White to Move — ', '')}</div>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+        
+        function clearOracleHintVisuals() {
+            clearTimeout(hintClearTimeout);
+            if (activeHintGroup) { scene.remove(activeHintGroup); activeHintGroup = null; }
+        }
+
+        function syncHintButtonUI() {
+            const maxH = gameMode === 'puzzles' ? 3 : 5;
+            document.getElementById('hint-label').textContent = `Hints (${hintsRemaining}/${maxH})`;
+            document.getElementById('btn-hint').disabled =
+                hintsRemaining <= 0 || chess.game_over() || isAnimating || puzzleWrongMoveActive || (gameMode === 'ai' && chess.turn() !== playerColor);
+        }
+
+        function triggerOracleHint() {
+            if (isAnimating || isStartMenuOpen || chess.game_over() || hintsRemaining <= 0) return;
+            let bestMove = null;
+            if (gameMode === 'puzzles') {
+                const sol = WIZARD_PUZZLES[currentPuzzleIndex]?.solution[currentPuzzleStep];
+                if (sol) bestMove = chess.moves({ verbose: true }).find(m => m.from === sol.from && m.to === sol.to);
+            } else {
+                const moves = chess.moves({ verbose: true });
+                if (!moves.length) return;
+                const isMax = chess.turn() === 'w';
+                let bestScore = isMax ? -Infinity : Infinity;
+                bestMove = moves[0];
+                for (const m of moves) {
+                    chess.move(m);
+                    const s = minimaxSearch(chess, 2, -Infinity, Infinity, !isMax);
+                    chess.undo();
+                    if (isMax ? s > bestScore : s < bestScore) { bestScore = s; bestMove = m; }
+                }
+            }
+            if (!bestMove) return;
+            hintsRemaining--; syncHintButtonUI(); sound.playSelect();
+            selectPieceOnSquare(bestMove.from);
+            clearOracleHintVisuals();
+            const sPos = squareToWorld(bestMove.from), ePos = squareToWorld(bestMove.to);
+            const mPos = new THREE.Vector3().addVectors(sPos, ePos).multiplyScalar(0.5); mPos.y = 2.3;
+            const grp = new THREE.Group();
+            const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(sPos.x, 0.25, sPos.z), mPos, new THREE.Vector3(ePos.x, 0.35, ePos.z));
+            grp.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.065, 8, false), new THREE.MeshBasicMaterial({ color: 0xfbbf24, depthTest: false })));
+            scene.add(grp); activeHintGroup = grp;
+            hintClearTimeout = setTimeout(clearOracleHintVisuals, 4000);
+            showToast(`Oracle Hint: ${bestMove.from.toUpperCase()} → ${bestMove.to.toUpperCase()}`);
+        }
+
+        function syncBoardWithEngine(animateDrop = false) {
+            clearOracleHintVisuals();
+            while (pieceGroup.children.length > 0) pieceGroup.remove(pieceGroup.children[0]);
+            for (const k in pieceObjects) delete pieceObjects[k];
+
+            const board = chess.board(), files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const cell = board[r][c];
+                    if (cell) {
+                        const sq = `${files[c]}${8 - r}`, mesh = createPieceMesh(cell.type, cell.color), wPos = squareToWorld(sq);
+                        mesh.position.copy(wPos);
+                        if (animateDrop) mesh.position.y = 2.5 + Math.random() * 1.5;
+                        pieceGroup.add(mesh);
+                        pieceObjects[sq] = { mesh, type: cell.type, color: cell.color, square: sq, phase: (r * 8 + c) * 0.5, basePos: wPos.clone(), dropOffset: animateDrop ? mesh.position.y : 0 };
+                    }
+                }
+            }
+            updateUIStatus(); updateCapturedCounts();
+        }
+
+        function clearSelectionAndHighlights() {
+            selectedSquare = null; legalMovesForSelected = [];
+            for (const sq in highlightMeshes) highlightMeshes[sq].group.visible = false;
+            let checkKingSq = null;
+            if (chess.in_check()) {
+                for (const sq in pieceObjects) if (pieceObjects[sq].type === 'k' && pieceObjects[sq].color === chess.turn()) checkKingSq = sq;
+            }
+            for (const sq in squareMeshes) {
+                const mat = squareMeshes[sq].material;
+                if (sq === checkKingSq) { mat.emissive.setHex(0xdc2626); mat.emissiveIntensity = 0.65; }
+                else if (lastMoveSquares.includes(sq)) { mat.emissive.setHex(0x6d28d9); mat.emissiveIntensity = 0.32; }
+                else { mat.emissive.setHex(0x000000); mat.emissiveIntensity = 0; }
+            }
+        }
+
+        function selectPieceOnSquare(sq) {
+            if (isAnimating || isStartMenuOpen || chess.game_over()) return;
+            if (gameMode === 'ai' && chess.turn() !== playerColor) return;
+            const p = pieceObjects[sq];
+            if (!p || p.color !== chess.turn()) return;
+
+            clearSelectionAndHighlights();
+            selectedSquare = sq; sound.playSelect();
+            squareMeshes[sq].material.emissive.setHex(0xa855f7);
+            squareMeshes[sq].material.emissiveIntensity = 0.55;
+
+            legalMovesForSelected = chess.moves({ square: sq, verbose: true });
+            legalMovesForSelected.forEach(m => {
+                const hl = highlightMeshes[m.to];
+                if (hl) {
+                    hl.group.visible = true;
+                    const isCap = m.flags.includes('c') || m.flags.includes('e') || m.captured;
+                    const col = isCap ? 0xf43f5e : 0x38bdf8;
+                    hl.ring.material.color.setHex(col);
+                    hl.dot.material.color.setHex(col);
+                    hl.beacon.material.color.setHex(col);
+                    hl.dot.visible = !isCap;
+                    hl.beacon.position.y = isCap ? 1.85 : 0.48;
+                    hl.beacon.scale.setScalar(isCap ? 1.35 : 0.95);
+                }
+            });
+        }
+
+        let currentMoveAnim = null;
+        function pieceName(t) { return ({ p: 'Pawn', n: 'Knight', b: 'Bishop', r: 'Rook', q: 'Queen', k: 'King' })[t] || 'Piece'; }
+
+        function executeMove(moveObj) {
+            clearOracleHintVisuals();
+            isAnimating = true;
+            clearSelectionAndHighlights();
+
+            const result = chess.move({ from: moveObj.from, to: moveObj.to, promotion: moveObj.promotion || 'q' });
+            if (!result) { isAnimating = false; return; }
+
+            lastMoveSquares = [result.from, result.to];
+            const attacker = pieceObjects[result.from];
+            delete pieceObjects[result.from];
+
+            // Bulletproof Capture Detection
+            let capturedSq = null, defender = null;
+            if (result.flags.includes('e')) {
+                const epRank = result.color === 'w' ? parseInt(result.to[1], 10) - 1 : parseInt(result.to[1], 10) + 1;
+                capturedSq = `${result.to[0]}${epRank}`;
+            } else if (result.captured || result.flags.includes('c') || pieceObjects[result.to]) {
+                capturedSq = result.to;
+            }
+            if (capturedSq && pieceObjects[capturedSq]) {
+                defender = pieceObjects[capturedSq];
+                delete pieceObjects[capturedSq];
+            }
+
+            let rookAnim = null;
+            if (result.flags.includes('k') || result.flags.includes('q')) {
+                const rank = result.color === 'w' ? '1' : '8';
+                const rFrom = result.flags.includes('k') ? `h${rank}` : `a${rank}`;
+                const rTo = result.flags.includes('k') ? `f${rank}` : `d${rank}`;
+                const rObj = pieceObjects[rFrom];
+                if (rObj) {
+                    delete pieceObjects[rFrom]; rObj.square = rTo; pieceObjects[rTo] = rObj;
+                    rookAnim = { piece: rObj, startPos: rObj.basePos.clone(), endPos: squareToWorld(rTo) };
+                }
+            }
+
+            currentMoveAnim = {
+                attacker, defender, rookAnim, result,
+                startPos: attacker.basePos.clone(), endPos: squareToWorld(result.to),
+                elapsed: 0, duration: Math.max(0.12, (defender ? 0.82 : 0.48) / animSpeedMultiplier),
+                shattered: false,
+                isPuzzleAutoReply: Boolean(moveObj.isPuzzleAutoReply)
+            };
+            if (!defender) sound.playMove();
+        }
+       function formatMoveSAN(moveObj) {
+            return moveObj ? `${moveObj.san} (${moveObj.from.toUpperCase()}→${moveObj.to.toUpperCase()})` : '';
+        }
+
+        function showGameOverModal() {
+            const modal = document.getElementById('game-over-modal');
+            const titleEl = document.getElementById('gameover-title');
+            const subEl = document.getElementById('gameover-subtitle');
+            const iconEl = document.getElementById('gameover-icon');
+            const badgeEl = document.getElementById('gameover-icon-badge');
+            document.getElementById('analysis-panel').classList.add('hidden');
+
+            if (chess.in_checkmate()) {
+                const winnerColor = chess.turn() === 'w' ? 'b' : 'w';
+                const winnerPieceName = winnerColor === 'w' ? 'Marble (White)' : 'Obsidian (Black)';
+
+                if (gameMode === 'ai') {
+                    const playerWon = winnerColor === playerColor;
+                    titleEl.textContent = playerWon ? 'YOU WON!' : 'YOU LOST';
+                    subEl.textContent = `${winnerPieceName} Won by Checkmate`;
+                    iconEl.textContent = playerWon ? 'emoji_events' : 'skull';
+                    badgeEl.className = playerWon
+                        ? 'w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center mx-auto mb-3 shadow-lg text-amber-300'
+                        : 'w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mx-auto mb-3 shadow-lg text-rose-300';
+                } else {
+                    titleEl.textContent = `${winnerColor === 'w' ? 'WHITE' : 'BLACK'} WON!`;
+                    subEl.textContent = `${winnerPieceName} Won by Checkmate`;
+                    iconEl.textContent = 'emoji_events';
+                }
+            } else {
+                titleEl.textContent = 'MATCH DRAWN';
+                subEl.textContent = 'Neither Marble nor Obsidian yielded — Draw Game';
+                iconEl.textContent = 'balance';
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        window.handlePostGameRematch = function() {
+            const modal = document.getElementById('game-over-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            restartMatchWithAnimation();
+        };
+
+        window.handlePostGameMenu = function() {
+            const modal = document.getElementById('game-over-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            openStartMenu();
+        };
+
+        window.toggleGameAnalysis = function() {
+            const panel = document.getElementById('analysis-panel');
+            if (!panel.classList.contains('hidden')) {
+                panel.classList.add('hidden');
+                return;
+            }
+            panel.classList.remove('hidden');
+            runPostGameAnalysis();
+        };
+
+        function runPostGameAnalysis() {
+            runMoveAnalysisIntoContainers(chess.history({ verbose: true }), 'analysis-list', 'analysis-summary-badges');
+        }
+
+        function runMoveAnalysisIntoContainers(history, listId, summaryId) {
+            const listEl = document.getElementById(listId);
+            const summaryEl = document.getElementById(summaryId);
+            if (!listEl || !summaryEl) return;
+            listEl.innerHTML = '<div class="text-xs text-white/60 py-3 text-center">Consulting Cathedral Oracle...</div>';
+
+            setTimeout(() => {
+                if (!history || !history.length) {
+                    listEl.innerHTML = '<div class="text-xs text-white/60 py-3 text-center">No moves recorded to analyse.</div>';
+                    summaryEl.innerHTML = '';
+                    return;
+                }
+
+                const sim = new Chess();
+                const counts = { Brilliant: 0, Best: 0, Okay: 0, Mistake: 0, Blunder: 0 };
+                let html = '';
+
+                for (let i = 0; i < history.length; i++) {
+                    const played = history[i];
+                    const turnColor = played.color;
+                    const isMax = turnColor === 'w';
+
+                    const legal = sim.moves({ verbose: true });
+                    let bestMove = legal[0];
+                    let bestEval = isMax ? -Infinity : Infinity;
+
+                    for (const cand of legal) {
+                        sim.move(cand);
+                        const ev = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+                        sim.undo();
+                        if (isMax ? ev > bestEval : ev < bestEval) {
+                            bestEval = ev;
+                            bestMove = cand;
+                        }
+                    }
+
+                    const evalBefore = evaluateBoard(sim);
+                    sim.move(played);
+                    const playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+
+                    const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
+                    const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 15;
+                    const matGain = isMax ? (playedEval - evalBefore) : (evalBefore - playedEval);
+
+                    let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
+
+                    if (isBestPlayed && ((played.san && played.san.includes('#')) || (played.captured && matGain >= 280))) {
+                        rating = 'Brilliant'; badgeStyle = 'bg-cyan-400/25 text-cyan-200 border-cyan-300/50'; symbol = '!!';
+                    } else if (isBestPlayed) {
+                        rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
+                    } else if (cpLoss <= 95) {
+                        rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
+                    } else if (cpLoss <= 240) {
+                        rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
+                    } else {
+                        rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
+                    }
+
+                    counts[rating]++;
+                    const moveNum = Math.floor(i / 2) + 1;
+                    const sideTag = turnColor === 'w' ? 'Marble (W)' : 'Obsidian (B)';
+                    const showSuggestion = (rating === 'Mistake' || rating === 'Blunder') && bestMove;
+
+                    html += `
+                        <div class="rounded-xl bg-white/5 border border-white/10 p-2.5 flex flex-col gap-1 text-left">
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs font-semibold text-white">
+                                    <span class="text-white/50 font-mono mr-1">${moveNum}${turnColor === 'w' ? '.' : '...'}</span>
+                                    <span>${played.san || (played.from + '→' + played.to)}</span>
+                                    <span class="text-[10px] text-white/45 ml-1.5">(${sideTag})</span>
+                                </div>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeStyle}">${rating} ${symbol}</span>
+                            </div>
+                            ${showSuggestion ? `
+                                <div class="text-[11px] text-amber-200/90 flex items-center gap-1 mt-0.5">
+                                    <span class="material-symbols-rounded !text-sm text-amber-300">lightbulb</span>
+                                    <span>Better move was <strong>${formatMoveSAN(bestMove)}</strong></span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                summaryEl.innerHTML = `
+                    <span class="px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-200">!! ${counts.Brilliant}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">★ ${counts.Best}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200">✓ ${counts.Okay}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">? ${counts.Mistake}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-200">?? ${counts.Blunder}</span>
+                `;
+                listEl.innerHTML = html;
+            }, 60);
+        }
+
+        function finalizeAnimatedMove(anim) {
+            const { attacker, defender, result, rookAnim, endPos } = anim;
+
+            if (defender) {
+                if (!anim.shattered) {
+                    anim.shattered = true;
+                    sound.playShatter();
+                    spawnShatterEffect(defender.basePos, defender.color);
+                    showToast(`${defender.color === 'w' ? 'Marble' : 'Obsidian'} ${pieceName(defender.type)} Shattered!`);
+                }
+                pieceGroup.remove(defender.mesh);
+            }
+            if (pieceObjects[result.to] && pieceObjects[result.to] !== attacker) {
+                pieceGroup.remove(pieceObjects[result.to].mesh);
+                delete pieceObjects[result.to];
+            }
+
+            if (result.flags.includes('p')) {
+                pieceGroup.remove(attacker.mesh);
+                attacker.type = result.promotion;
+                attacker.mesh = createPieceMesh(result.promotion, attacker.color);
+                pieceGroup.add(attacker.mesh);
+                showToast(`Pawn Ascended to ${pieceName(result.promotion)}!`);
+            }
+
+            attacker.square = result.to;
+            attacker.basePos.copy(endPos);
+            attacker.mesh.position.copy(endPos);
+            attacker.mesh.rotation.set(0, 0, 0);
+            pieceObjects[result.to] = attacker;
+
+            if (rookAnim) {
+                rookAnim.piece.basePos.copy(rookAnim.endPos);
+                rookAnim.piece.mesh.position.copy(rookAnim.endPos);
+            }
+
+            isAnimating = false;
+            clearSelectionAndHighlights();
+            updateUIStatus(); updateCapturedCounts(); syncHintButtonUI();
+            syncGameToCloud(true, chess.game_over());
+
+            // --- PUZZLE MODE AUTO-REPLY & COMPLETION ---
+            if (gameMode === 'puzzles') {
+                const pz = WIZARD_PUZZLES[currentPuzzleIndex];
+                const expected = pz.solution[currentPuzzleStep];
+
+                // If this was the player's move, verify it matches the expected solution step
+                if (!anim.isPuzzleAutoReply) {
+                    if (expected && (result.from !== expected.from || result.to !== expected.to)) {
+                        puzzleWrongMoveActive = true;
+                        sound.playCheck();
+                        updateUIStatus();
+                        syncHintButtonUI();
+                        if (undosRemaining > 0) {
+                            document.getElementById('puzzle-objective').textContent = `❌ Wrong move (${result.san})! Click Undo (${undosRemaining}/3 left).`;
+                            showToast(`Wrong Move! Use Undo (${undosRemaining}/3 left) to retry.`);
+                        } else {
+                            document.getElementById('puzzle-objective').textContent = `❌ Out of Undos! Click Retry to restart.`;
+                            showToast('Out of Undos! Click Retry to restart trial.');
+                        }
+                        return;
+                    }
+                }
+
+                // Advance exactly 1 step for the move that just completed
+                currentPuzzleStep++;
+
+                // Did we finish the entire puzzle?
+                if (currentPuzzleStep >= pz.solution.length) {
+                    sound.playFanfare();
+                    solvedInCurrentBatch.add(currentPuzzleIndex);
+
+                    // Did the player complete all 3 puzzles in this level?
+                    if (solvedInCurrentBatch.size >= WIZARD_PUZZLES.length) {
+                        puzzleTierBatchIndex[puzzleDifficulty] = (puzzleTierBatchIndex[puzzleDifficulty] || 0) + 1;
+                        localStorage.setItem('chess_wiz_puzzle_batches', JSON.stringify(puzzleTierBatchIndex));
+                        solvedInCurrentBatch.clear();
+                        WIZARD_PUZZLES = buildActivePuzzlesForTier(puzzleDifficulty);
+
+                        const newSetNum = puzzleTierBatchIndex[puzzleDifficulty] + 1;
+                        document.getElementById('puzzle-objective').textContent = `🏆 Level Complete! Unlocking fresh Set #${newSetNum}...`;
+                        showToast(`🏆 All 3 ${pz.tier} Trials Mastered! Loading New Puzzle Set #${newSetNum}!`);
+
+                        setTimeout(() => {
+                            if (gameMode === 'puzzles' && !isStartMenuOpen) {
+                                loadPuzzleByIndex(0);
+                            }
+                        }, 1500);
+                    } else {
+                        document.getElementById('puzzle-objective').textContent = '★ Trial Mastered! Loading next puzzle...';
+                        showToast(`★ Mastered: ${pz.title}! (${solvedInCurrentBatch.size}/3 in this set)`);
+                        setTimeout(() => {
+                            if (gameMode === 'puzzles' && !isStartMenuOpen) {
+                                loadPuzzleByIndex(currentPuzzleIndex + 1);
+                            }
+                        }, 1300);
+                    }
+                    return;
+                }
+
+                // Otherwise, if it was the player's move and there is an AI reply waiting at currentPuzzleStep, play it!
+                if (!anim.isPuzzleAutoReply) {
+                    const reply = pz.solution[currentPuzzleStep];
+                    if (reply) {
+                        setTimeout(() => {
+                            if (gameMode === 'puzzles' && !isStartMenuOpen) {
+                                executeMove({ from: reply.from, to: reply.to, promotion: 'q', isPuzzleAutoReply: true });
+                            }
+                        }, 380);
+                    }
+                }
+                return;
+            }
+
+            // --- STANDARD AI & PVP MODE ---
+            if (chess.in_checkmate()) {
+                sound.playFanfare();
+                showToast(`Checkmate! ${chess.turn() === 'w' ? 'Obsidian' : 'Marble'} Triumphs!`);
+                if (autoSaveOnEnd) saveGameplayToFile(true);
+                setTimeout(showGameOverModal, 650);
+            } else if (chess.game_over()) {
+                sound.playCheck();
+                showToast('Match Drawn!');
+                if (autoSaveOnEnd) saveGameplayToFile(true);
+                setTimeout(showGameOverModal, 650);
+            } else if (chess.in_check()) {
+                sound.playCheck(); showToast('Check!');
+            }
+
+            if (!chess.game_over() && gameMode === 'ai' && chess.turn() !== playerColor) {
+                setTimeout(makeWizardAIMove, 350);
+            }
+        }
+
+        function loadPuzzleByIndex(idx) {
+            WIZARD_PUZZLES = buildActivePuzzlesForTier(puzzleDifficulty);
+            currentPuzzleIndex = (idx + WIZARD_PUZZLES.length) % WIZARD_PUZZLES.length;
+            currentPuzzleStep = 0;
+            puzzleWrongMoveActive = false;
+            hintsRemaining = 3; // 3 dedicated hints per puzzle
+            undosRemaining = 3; // 3 dedicated undos per puzzle
+
+            const pz = WIZARD_PUZZLES[currentPuzzleIndex];
+            currentMoveAnim = null; isAnimating = false;
+            chess.load(pz.fen); playerColor = chess.turn(); lastMoveSquares = [];
+            clearSelectionAndHighlights(); syncBoardWithEngine(true);
+
+            if (!isStartMenuOpen) document.getElementById('puzzle-banner').classList.remove('hidden');
+            document.getElementById('puzzle-badge-num').textContent = `${pz.tier} ${currentPuzzleIndex + 1} / ${WIZARD_PUZZLES.length}`;
+            document.getElementById('puzzle-title').textContent = pz.title;
+            document.getElementById('puzzle-objective').textContent = `${pz.objective} • ${pz.description}`;
+            syncHintButtonUI(); updateUIStatus(); populateStartMenuPuzzles();
+            showToast(`${pz.tier} Trial #${pz.id} • 3 Hints & 3 Undos Ready`);
+        }
+        window.prevPuzzle = () => { sound.playSelect(); loadPuzzleByIndex(currentPuzzleIndex - 1); };
+        window.nextPuzzle = () => { sound.playSelect(); loadPuzzleByIndex(currentPuzzleIndex + 1); };
+        window.retryCurrentPuzzle = () => { sound.playSelect(); loadPuzzleByIndex(currentPuzzleIndex); };
+
+        /* 7B. CUSTOMIZATION & SQUARE VISIBILITY */
+        let areSquaresVisible = true;
+        window.setSquaresVisibility = function(visible) {
+            areSquaresVisible = Boolean(visible);
+            for (const sq in squareMeshes) {
+                squareMeshes[sq].material.transparent = !areSquaresVisible;
+                squareMeshes[sq].material.opacity = areSquaresVisible ? 1.0 : 0.0;
+                squareMeshes[sq].material.needsUpdate = true;
+            }
+            document.getElementById('btn-squares-show').classList.toggle('active', areSquaresVisible);
+            document.getElementById('btn-squares-hide').classList.toggle('active', !areSquaresVisible);
+            sound.playSelect();
+            showToast(areSquaresVisible ? 'Board Squares: Shown (Default)' : 'Board Squares: Hidden');
+        };
+            const BOARD_THEMES = {
+                    classic: { light: 0xf5f2eb, dark: 0x3b3355, name: 'Gothic Alabaster' },
+                    emerald: { light: 0xd8f3dc, dark: 0x134e4a, name: 'Emerald Sanctum' },
+                    crimson: { light: 0xf9eae1, dark: 0x6b1426, name: 'Royal Crimson' },
+                    sapphire: { light: 0xe0f2fe, dark: 0x1e3a8a, name: 'Arcane Sapphire' }
+             };
+        window.applyBoardSquareTheme = function(k) {
+            const t = BOARD_THEMES[k]; if (!t) return;
+            for (const sq in squareMeshes) squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
+            ['classic', 'emerald', 'crimson', 'sapphire'].forEach(id => document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k));
+            sound.playSelect(); showToast(`Board Theme: ${t.name}`);
+        };
+
+        const FRAME_THEMES = {
+            bronze: { frame: 0x262135, trim: 0x9370db, name: 'Cathedral Bronze' },
+            gold: { frame: 0x42331b, trim: 0xfbbf24, name: 'Royal Gold' },
+            iron: { frame: 0x121216, trim: 0x52525b, name: 'Obsidian Iron' }
+        };
+        window.applyBoardFrameTheme = function(k) {
+            const t = FRAME_THEMES[k]; if (!t) return;
+            boardFrameMesh.material.color.setHex(t.frame); boardTrimMesh.material.color.setHex(t.trim);
+            ['bronze', 'gold', 'iron'].forEach(id => document.getElementById(`theme-frame-${id}`)?.classList.toggle('active', id === k));
+            sound.playSelect(); showToast(`Altar Frame: ${t.name}`);
+        };
+
+        const PIECE_THEMES = {
+            classic: { wC: 0xf7f4ef, wR: 0xfbbf24, bC: 0x161224, bR: 0xa855f7, name: 'Marble vs Obsidian' },
+            royal: { wC: 0xfef3c7, wR: 0xf59e0b, bC: 0x1c1917, bR: 0xf43f5e, name: 'Ivory Gold vs Ebony' },
+            jade: { wC: 0xa7f3d0, wR: 0x10b981, bC: 0x4c0519, bR: 0xfb7185, name: 'Celestial Jade vs Ruby' },
+            frost: { wC: 0xe0f2fe, wR: 0x38bdf8, bC: 0x2e1065, bR: 0xc084fc, name: 'Frost vs Nether' }
+        };
+        window.applyPieceTheme = function(k) {
+            const t = PIECE_THEMES[k]; if (!t) return;
+            whitePieceMaterial.color.setHex(t.wC); whiteRuneMat.color.setHex(t.wR);
+            blackPieceMaterial.color.setHex(t.bC); blackRuneMat.color.setHex(t.bR);
+            ['classic', 'royal', 'jade', 'frost'].forEach(id => document.getElementById(`theme-piece-${id}`)?.classList.toggle('active', id === k));
+            sound.playSelect(); showToast(`Pieces: ${t.name}`);
+        };
+
+        /* 8. WIZARD AI */
+        const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+        function evaluateBoard(g) {
+            if (g.in_checkmate()) return g.turn() === 'w' ? -99999 : 99999;
+            if (g.in_draw()) return 0;
+            let s = 0; const b = g.board();
+            for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+                const p = b[r][c];
+                if (p) {
+                    let v = PIECE_VALUES[p.type] + (r >= 2 && r <= 5 && c >= 2 && c <= 5 ? 15 : 0);
+                    s += p.color === 'w' ? v : -v;
+                }
+            }
+            return s;
+        }
+        function minimaxSearch(g, d, alpha, beta, isMax) {
+            if (d === 0 || g.game_over()) return evaluateBoard(g);
+            const moves = g.moves({ verbose: true }).sort((a, b) => (b.captured ? 10 : 0) - (a.captured ? 10 : 0));
+            if (isMax) {
+                let maxE = -Infinity;
+                for (const m of moves) { g.move(m); maxE = Math.max(maxE, minimaxSearch(g, d - 1, alpha, beta, false)); g.undo(); alpha = Math.max(alpha, maxE); if (beta <= alpha) break; }
+                return maxE;
+            } else {
+                let minE = Infinity;
+                for (const m of moves) { g.move(m); minE = Math.min(minE, minimaxSearch(g, d - 1, alpha, beta, true)); g.undo(); beta = Math.min(beta, minE); if (beta <= alpha) break; }
+                return minE;
+            }
+        }
+
+        function makeWizardAIMove() {
+            const aiColor = playerColor === 'w' ? 'b' : 'w';
+            if (chess.game_over() || gameMode !== 'ai' || chess.turn() !== aiColor || isStartMenuOpen) return;
+            if (isAnimating) {
+                setTimeout(makeWizardAIMove, 200);
+                return;
+            }
+            const moves = chess.moves({ verbose: true });
+            if (!moves.length) return;
+            const isMax = aiColor === 'w';
+            let chosen = moves[0];
+            if (aiDifficulty === 'apprentice') {
+                chosen = moves[Math.floor(Math.random() * moves.length)];
+            } else {
+                const depth = aiDifficulty === 'archmage' ? 3 : 2;
+                moves.sort((a, b) => (b.captured ? 12 : 0) - (a.captured ? 12 : 0));
+                let best = isMax ? -Infinity : Infinity;
+                for (const m of moves) {
+                    chess.move(m);
+                    const s = minimaxSearch(chess, depth - 1, -Infinity, Infinity, !isMax);
+                    chess.undo();
+                    if (isMax ? s > best : s < best) { best = s; chosen = m; }
+                }
+            }
+            executeMove({ from: chosen.from, to: chosen.to, promotion: chosen.promotion || 'q' });
+        }
+
+        /* 9. CAMERA & RAYCASTING */
+        const cameraTarget = new THREE.Vector3(0, 0.15, 0);
+        let boardSideAzimuth = 0, currentPresetIdx = 0;
+        const CAMERA_PRESETS = [
+            { name: 'Optimal 58°', phi: 0.56, radius: 11.4, thetaOffset: 0 },
+            { name: 'Top-Down 2D/3D', phi: 0.08, radius: 12.2, thetaOffset: 0 },
+            { name: 'Cinematic', phi: 0.96, radius: 14.8, thetaOffset: 0.38 }
+        ];
+        let spherical = { radius: 15.2, theta: 0.45, phi: 0.85, targetRadius: 11.4, targetTheta: 0, targetPhi: 0.56 };
+
+        function applyCameraPreset(idx) {
+            const p = CAMERA_PRESETS[idx];
+            spherical.targetPhi = p.phi; spherical.targetRadius = p.radius; spherical.targetTheta = boardSideAzimuth + p.thetaOffset;
+            document.getElementById('camera-label').textContent = p.name;
+        }
+
+        let isPointerDown = false, pointerMoved = false, downPos = { x: 0, y: 0 }, prevPos = { x: 0, y: 0 };
+        const raycaster = new THREE.Raycaster(), pointerNDC = new THREE.Vector2();
+
+        renderer.domElement.addEventListener('pointerdown', e => {
+            isPointerDown = true; pointerMoved = false; downPos = { x: e.clientX, y: e.clientY }; prevPos = { x: e.clientX, y: e.clientY };
+            // Fire instant haptic feedback on touch-down instead of waiting for pointer-up
+            if (e.target === renderer.domElement && !isStartMenuOpen && !chess.game_over()) {
+                sound.playTactile();
+            }
+        });
+        window.addEventListener('pointermove', e => {
+            if (!isPointerDown) return;
+            if (Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y) > 6) pointerMoved = true;
+            spherical.targetTheta -= (e.clientX - prevPos.x) * 0.007;
+            spherical.targetPhi = Math.max(0.06, Math.min(Math.PI / 2.2, spherical.targetPhi - (e.clientY - prevPos.y) * 0.006));
+            prevPos = { x: e.clientX, y: e.clientY };
+        });
+        window.addEventListener('pointerup', e => {
+            if (!isPointerDown) return;
+            isPointerDown = false;
+            if (!pointerMoved && e.target === renderer.domElement) handleCanvasClick(e.clientX, e.clientY);
+        });
+        renderer.domElement.addEventListener('wheel', e => {
+            e.preventDefault();
+            spherical.targetRadius = Math.max(7.2, Math.min(20.0, spherical.targetRadius + e.deltaY * 0.0075));
+        }, { passive: false });
+
+        function handleCanvasClick(cx, cy) {
+            if (isAnimating || isStartMenuOpen || chess.game_over()) return;
+            if (gameMode === 'ai' && chess.turn() !== playerColor) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointerNDC.x = ((cx - rect.left) / rect.width) * 2 - 1;
+            pointerNDC.y = -((cy - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(pointerNDC, camera);
+
+            if (selectedSquare && legalMovesForSelected.length > 0) {
+                const targets = legalMovesForSelected.map(m => highlightMeshes[m.to]?.target).filter(Boolean);
+                const hits = raycaster.intersectObjects([...targets, ...Object.values(squareMeshes)], false);
+                if (hits.length > 0) {
+                    const hitSq = hits[0].object.userData.square;
+                    const match = legalMovesForSelected.find(m => m.to === hitSq);
+                    if (match) {
+                        if (match.flags.includes('p')) {
+                            pendingPromotionMove = { from: selectedSquare, to: hitSq };
+                            document.getElementById('promotion-modal').classList.remove('hidden');
+                            document.getElementById('promotion-modal').classList.add('flex');
+                            return;
+                        }
+                        executeMove({ from: selectedSquare, to: hitSq });
+                        return;
+                    }
+                }
+            }
+
+            const interactables = [...Object.values(squareMeshes)];
+            Object.values(pieceObjects).forEach(p => p.mesh.traverse(ch => { if (ch.isMesh) { ch.userData.parentSquare = p.square; interactables.push(ch); } }));
+            const intersects = raycaster.intersectObjects(interactables, false);
+            if (!intersects.length) { clearSelectionAndHighlights(); return; }
+
+            const clickedSq = intersects[0].object.userData.square || intersects[0].object.userData.parentSquare;
+            if (!clickedSq) return;
+
+            if (selectedSquare) {
+                const match = legalMovesForSelected.find(m => m.to === clickedSq);
+                if (match) {
+                    if (match.flags.includes('p')) {
+                        pendingPromotionMove = { from: selectedSquare, to: clickedSq };
+                        document.getElementById('promotion-modal').classList.remove('hidden');
+                        document.getElementById('promotion-modal').classList.add('flex');
+                        return;
+                    }
+                    executeMove({ from: selectedSquare, to: clickedSq });
+                    return;
+                }
+            }
+            if (pieceObjects[clickedSq] && pieceObjects[clickedSq].color === chess.turn()) selectPieceOnSquare(clickedSq);
+            else clearSelectionAndHighlights();
+        }
+
+        window.completePromotion = function(p) {
+            document.getElementById('promotion-modal').classList.add('hidden');
+            document.getElementById('promotion-modal').classList.remove('flex');
+            if (pendingPromotionMove) { executeMove({ ...pendingPromotionMove, promotion: p }); pendingPromotionMove = null; }
+        };
+
+        /* 10. UI & START MENU CONTROLLERS */
+        let toastTimeout = null;
+        function showToast(msg) {
+            const t = document.getElementById('event-toast');
+            document.getElementById('event-toast-text').textContent = msg;
+            t.classList.remove('opacity-0', '-translate-y-2'); t.classList.add('opacity-100', 'translate-y-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { t.classList.add('opacity-0', '-translate-y-2'); t.classList.remove('opacity-100', 'translate-y-0'); }, 2600);
+        }
+
+        const DIFF_META = {
+            apprentice: { label: 'AI: Apprentice', icon: 'auto_fix_normal', name: 'Apprentice' },
+            scholar: { label: 'AI: Scholar', icon: 'menu_book', name: 'Scholar' },
+            archmage: { label: 'AI: Archmage', icon: 'bolt', name: 'Archmage' }
+        };
+
+        function syncDifficultyUI() {
+            const ic = document.getElementById('diff-icon'), lb = document.getElementById('diff-label');
+            if (gameMode === 'pvp') { ic.textContent = 'group'; lb.textContent = 'Mode: 2P PvP'; }
+            else if (gameMode === 'puzzles') { ic.textContent = 'extension'; lb.textContent = `Puzzle #${currentPuzzleIndex + 1}`; }
+            else { ic.textContent = DIFF_META[aiDifficulty].icon; lb.textContent = DIFF_META[aiDifficulty].label; }
+
+            ['apprentice', 'scholar', 'archmage'].forEach(l => document.getElementById(`menu-diff-${l}`)?.classList.toggle('active', aiDifficulty === l));
+            document.getElementById('menu-mode-ai').classList.toggle('active', gameMode === 'ai');
+            document.getElementById('menu-mode-pvp').classList.toggle('active', gameMode === 'pvp');
+            document.getElementById('menu-side-w').classList.toggle('active', playerColor === 'w');
+            document.getElementById('menu-side-b').classList.toggle('active', playerColor === 'b');
+
+            const isAI = gameMode === 'ai';
+            document.getElementById('menu-side-section').style.opacity = isAI ? '1' : '0.4';
+            document.getElementById('menu-side-section').style.pointerEvents = isAI ? 'auto' : 'none';
+            document.getElementById('menu-diff-section').style.opacity = isAI ? '1' : '0.4';
+            document.getElementById('menu-diff-section').style.pointerEvents = isAI ? 'auto' : 'none';
+        }
+
+        window.setMenuMode = m => { gameMode = m; sound.playSelect(); syncDifficultyUI(); };
+        window.setMenuSide = s => { playerColor = s; sound.playSelect(); syncDifficultyUI(); };
+        window.setMenuDifficulty = d => { aiDifficulty = d; sound.playSelect(); syncDifficultyUI(); };
+
+        let isStartPuzzlesOpen = false, isStartSettingsOpen = false, isStartCustomizeOpen = false, isStartAnalyseOpen = false, isStartContinueOpen = false;
+        let saveFileAddress = 'C:\\Games\\ChessWiz\\cathedral_match.json', chosenFileHandle = null, autoSaveOnEnd = false, menuHideTimeout = null;
+
+        function resetStartMenuSubpanels() {
+            isStartPuzzlesOpen = false; isStartSettingsOpen = false; isStartCustomizeOpen = false; isStartAnalyseOpen = false; isStartContinueOpen = false;
+            document.getElementById('start-menu-main-view').classList.remove('hidden');
+            document.getElementById('start-menu-puzzles-view').classList.add('hidden');
+            document.getElementById('start-menu-settings-view').classList.add('hidden');
+            document.getElementById('start-menu-customize-view').classList.add('hidden');
+            document.getElementById('start-menu-analyse-view').classList.add('hidden');
+            document.getElementById('start-menu-continue-view')?.classList.add('hidden');
+
+            document.getElementById('start-puzzles-icon').textContent = 'extension';
+            document.getElementById('start-puzzles-label').textContent = 'Puzzles';
+            document.getElementById('start-analyse-icon').textContent = 'analytics';
+            document.getElementById('start-analyse-label').textContent = 'Analyse';
+            document.getElementById('start-customize-icon').textContent = 'palette';
+            document.getElementById('start-customize-label').textContent = 'Customize';
+            document.getElementById('start-settings-icon').textContent = 'settings';
+            document.getElementById('start-settings-label').textContent = 'Settings';
+            if (document.getElementById('start-continue-icon')) document.getElementById('start-continue-icon').textContent = 'restore';
+            if (document.getElementById('start-continue-label')) document.getElementById('start-continue-label').textContent = 'Continue Game';
+        }
+
+        window.toggleStartContinuePanel = function() {
+            const next = !isStartContinueOpen;
+            resetStartMenuSubpanels();
+            isStartContinueOpen = next;
+
+            if (next) {
+                document.getElementById('start-menu-main-view').classList.add('hidden');
+                document.getElementById('start-menu-continue-view').classList.remove('hidden');
+                document.getElementById('start-continue-icon').textContent = 'arrow_back';
+                document.getElementById('start-continue-label').textContent = 'Back';
+
+                // Show preview details of the saved Cloud game if available
+                const descEl = document.getElementById('continue-prev-desc');
+                const raw = localStorage.getItem(CLOUD_ACTIVE_KEY) || localStorage.getItem(CLOUD_PREV_GAME_KEY);
+                if (hasStartedMatchOnce && chess.history().length > 0 && !chess.game_over()) {
+                    descEl.textContent = `Active match in progress (${chess.history().length} moves played) — Click to continue`;
+                } else if (raw) {
+                    try {
+                        const d = JSON.parse(raw);
+                        const moveCount = d.historyVerbose ? d.historyVerbose.length : 0;
+                        const timeStr = d.savedAt ? new Date(d.savedAt).toLocaleString() : 'Cloud Save';
+                        descEl.textContent = `Saved ${timeStr} (${moveCount} moves) — Click to continue playing`;
+                    } catch (e) {}
+                } else {
+                    descEl.textContent = 'No previous Cloud match found yet — Play a match or Import a file!';
+                }
+            }
+            sound.playSelect();
+        };
+
+        window.continuePreviousCloudMatch = function() {
+            // 1. If a live match is already active in memory and not game over, resume it directly
+            if (hasStartedMatchOnce && chess.history().length > 0 && !chess.game_over()) {
+                sound.playSelect();
+                showToast('Continuing Current Match...');
+                closeStartMenu(false);
+                return;
+            }
+
+            // 2. Otherwise load the last match from Cathedral Cloud Storage
+            const raw = localStorage.getItem(CLOUD_ACTIVE_KEY) || localStorage.getItem(CLOUD_PREV_GAME_KEY);
+            if (!raw) {
+                sound.playCheck();
+                showToast('No previous Cloud game found! Start a match or Import a file.');
+                return;
+            }
+
+            try {
+                const data = JSON.parse(raw);
+                if (data.gameMode) gameMode = data.gameMode;
+                if (data.playerColor) playerColor = data.playerColor;
+                if (data.aiDifficulty) aiDifficulty = data.aiDifficulty;
+
+                let loaded = false;
+                if (data.pgn) {
+                    loaded = chess.load_pgn(data.pgn);
+                }
+                if (!loaded && data.fen) {
+                    loaded = chess.load(data.fen);
+                }
+
+                // If the previous game was already finished (checkmate/draw), undo the final move so the user can continue playing, or notify them
+                if (chess.game_over()) {
+                    showToast('Note: Previous Cloud match had already ended — loaded final board state.');
+                } else {
+                    showToast('Previous Cloud Match Restored — Continue Playing!');
+                }
+
+                hasStartedMatchOnce = true;
+                hintsRemaining = gameMode === 'puzzles' ? 3 : 5;
+                undosRemaining = MAX_UNDOS_PER_MATCH;
+                lastMoveSquares = [];
+                clearSelectionAndHighlights();
+                syncDifficultyUI();
+                syncBoardWithEngine(true);
+                syncHintButtonUI();
+                sound.playSelect();
+                closeStartMenu(false);
+            } catch (err) {
+                showToast('Could not restore previous Cloud match.');
+            }
+        };
+
+        window.handleImportContinueGame = function(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const content = String(ev.target.result || '');
+                    if (file.name.toLowerCase().endsWith('.pgn')) {
+                        if (!chess.load_pgn(content)) throw new Error('Invalid PGN');
+                    } else {
+                        const data = JSON.parse(content);
+                        if (data.gameMode) gameMode = data.gameMode;
+                        if (data.playerColor) playerColor = data.playerColor;
+                        if (data.aiDifficulty) aiDifficulty = data.aiDifficulty;
+
+                        let loaded = false;
+                        if (data.pgn) loaded = chess.load_pgn(data.pgn);
+                        if (!loaded && data.fen) loaded = chess.load(data.fen);
+                        if (!loaded && Array.isArray(data.historyVerbose)) {
+                            chess.reset();
+                            data.historyVerbose.forEach(m => chess.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' }));
+                        }
+                    }
+
+                    hasStartedMatchOnce = true;
+                    hintsRemaining = gameMode === 'puzzles' ? 3 : 5;
+                    undosRemaining = MAX_UNDOS_PER_MATCH;
+                    lastMoveSquares = [];
+                    clearSelectionAndHighlights();
+                    syncDifficultyUI();
+                    syncBoardWithEngine(true);
+                    syncHintButtonUI();
+                    syncGameToCloud(true, chess.game_over());
+                    sound.playSelect();
+                    showToast(`Imported "${file.name}" — Continue Playing!`);
+                    closeStartMenu(false);
+                } catch (err) {
+                    sound.playCheck();
+                    showToast('Invalid save file! Please select a valid .JSON or .PGN file.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        };
+        
+        window.toggleStartPuzzlesPanel = function() {
+            const next = !isStartPuzzlesOpen;
+            resetStartMenuSubpanels();
+            isStartPuzzlesOpen = next;
+            if (next) {
+                WIZARD_PUZZLES = buildActivePuzzlesForTier(puzzleDifficulty);
+                // Rotate to the next unplayed puzzle in the batch
+                currentPuzzleIndex = (currentPuzzleIndex + 1) % WIZARD_PUZZLES.length;
+                gameMode = 'puzzles';
+                populateStartMenuPuzzles();
+
+                document.getElementById('start-menu-main-view').classList.add('hidden');
+                document.getElementById('start-menu-puzzles-view').classList.remove('hidden');
+                document.getElementById('start-puzzles-icon').textContent = 'arrow_back';
+                document.getElementById('start-puzzles-label').textContent = 'Back';
+            }
+            sound.playSelect();
+        };
+
+        window.toggleStartAnalysePanel = function() {
+            const next = !isStartAnalyseOpen;
+            resetStartMenuSubpanels();
+            isStartAnalyseOpen = next;
+            if (next) {
+                document.getElementById('start-menu-main-view').classList.add('hidden');
+                document.getElementById('start-menu-analyse-view').classList.remove('hidden');
+                document.getElementById('start-analyse-icon').textContent = 'arrow_back';
+                document.getElementById('start-analyse-label').textContent = 'Back';
+                analysePreviousCloudGame();
+            }
+            sound.playSelect();
+        };
+
+        window.analysePreviousCloudGame = function() {
+            const srcLabel = document.getElementById('start-analyse-source-label');
+            if (chess.history().length > 0) {
+                if (srcLabel) srcLabel.textContent = `Reviewing current match (${chess.history().length} moves played)`;
+                runMoveAnalysisIntoContainers(chess.history({ verbose: true }), 'start-analysis-list', 'start-analysis-summary-badges');
+                sound.playSelect();
+                return;
+            }
+            const raw = localStorage.getItem(CLOUD_PREV_GAME_KEY) || localStorage.getItem(CLOUD_ACTIVE_KEY);
+            if (!raw) {
+                if (srcLabel) srcLabel.textContent = 'No previous Cloud match found yet.';
+                document.getElementById('start-analysis-list').innerHTML = '<div class="text-xs text-white/50 py-4 text-center">Play a match or click "Import File..." to analyse!</div>';
+                return;
+            }
+            try {
+                const data = JSON.parse(raw);
+                let hist = data.historyVerbose || [];
+                if (!hist.length && data.pgn) {
+                    const temp = new Chess();
+                    if (temp.load_pgn(data.pgn)) hist = temp.history({ verbose: true });
+                }
+                if (srcLabel) srcLabel.textContent = `Reviewing saved Cloud match (${hist.length} moves)`;
+                runMoveAnalysisIntoContainers(hist, 'start-analysis-list', 'start-analysis-summary-badges');
+                sound.playSelect();
+            } catch (e) {
+                showToast('Could not load Cloud game for analysis.');
+            }
+        };
+
+        window.handleImportGameForAnalysis = function(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const content = String(ev.target.result || '');
+                    let hist = [];
+                    if (file.name.toLowerCase().endsWith('.pgn')) {
+                        const temp = new Chess();
+                        if (!temp.load_pgn(content)) throw new Error('Invalid PGN');
+                        hist = temp.history({ verbose: true });
+                    } else {
+                        const data = JSON.parse(content);
+                        if (Array.isArray(data.historyVerbose) && data.historyVerbose.length) {
+                            hist = data.historyVerbose;
+                        } else if (data.pgn) {
+                            const temp = new Chess();
+                            if (temp.load_pgn(data.pgn)) hist = temp.history({ verbose: true });
+                        }
+                    }
+                    document.getElementById('start-analyse-source-label').textContent = `Analysing imported file: ${file.name}`;
+                    runMoveAnalysisIntoContainers(hist, 'start-analysis-list', 'start-analysis-summary-badges');
+                    sound.playSelect();
+                    showToast(`Analysing "${file.name}"`);
+                } catch (err) {
+                    sound.playCheck();
+                    showToast('Invalid file for analysis! Please choose a .JSON or .PGN file.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        };
+
+        window.toggleStartCustomizePanel = function() {
+            const next = !isStartCustomizeOpen; resetStartMenuSubpanels(); isStartCustomizeOpen = next;
+            if (next) {
+                document.getElementById('start-menu-main-view').classList.add('hidden');
+                document.getElementById('start-menu-customize-view').classList.remove('hidden');
+                document.getElementById('start-customize-icon').textContent = 'arrow_back';
+                document.getElementById('start-customize-label').textContent = 'Back';
+            }
+            sound.playSelect();
+        };
+
+        window.toggleStartSettingsPanel = function() {
+            const next = !isStartSettingsOpen; resetStartMenuSubpanels(); isStartSettingsOpen = next;
+            if (next) {
+                document.getElementById('start-menu-main-view').classList.add('hidden');
+                document.getElementById('start-menu-settings-view').classList.remove('hidden');
+                document.getElementById('start-settings-icon').textContent = 'arrow_back';
+                document.getElementById('start-settings-label').textContent = 'Back';
+            }
+            sound.playSelect();
+        };
+
+        window.openStartMenu = function() {
+            isStartMenuOpen = true;
+            clearTimeout(menuHideTimeout);
+            resetStartMenuSubpanels();
+            syncDifficultyUI(); syncSoundUI();
+
+            const overlay = document.getElementById('start-menu-overlay');
+            overlay.style.display = 'flex';
+            overlay.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+
+            document.getElementById('top-hud-bar').classList.remove('hud-visible');
+            document.getElementById('top-hud-bar').classList.add('hud-top-hidden');
+            document.getElementById('bottom-dock-nav').classList.remove('hud-visible');
+            document.getElementById('bottom-dock-nav').classList.add('hud-hidden');
+            document.getElementById('puzzle-banner').classList.add('hidden');
+
+            document.getElementById('btn-resume-match').classList.toggle('hidden', !hasStartedMatchOnce);
+        };
+
+        window.closeStartMenu = function(startFreshMatch) {
+            if (isStartPuzzlesOpen && startFreshMatch) gameMode = 'puzzles';
+            isStartMenuOpen = false;
+            clearTimeout(menuHideTimeout);
+            const overlay = document.getElementById('start-menu-overlay');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            menuHideTimeout = setTimeout(() => { 
+                if (!isStartMenuOpen) {
+                    overlay.classList.add('hidden');
+                    overlay.style.display = 'none';
+                }
+            }, 350);
+
+            document.getElementById('top-hud-bar').classList.remove('hud-top-hidden');
+            document.getElementById('top-hud-bar').classList.add('hud-visible');
+            document.getElementById('bottom-dock-nav').classList.remove('hud-hidden');
+            document.getElementById('bottom-dock-nav').classList.add('hud-visible');
+
+            boardSideAzimuth = (gameMode === 'ai' && playerColor === 'b') ? Math.PI : 0;
+            document.getElementById('flip-label').textContent = `Side: ${boardSideAzimuth === 0 ? 'White' : 'Black'}`;
+            currentPresetIdx = 0; applyCameraPreset(0);
+
+            if (startFreshMatch || !hasStartedMatchOnce) {
+                hasStartedMatchOnce = true;
+                restartMatchWithAnimation();
+            } else {
+                isAnimating = false;
+                document.getElementById('puzzle-banner').classList.toggle('hidden', gameMode !== 'puzzles');
+                updateUIStatus(); syncHintButtonUI();
+                if (gameMode === 'ai' && chess.turn() !== playerColor && !chess.game_over()) setTimeout(makeWizardAIMove, 450);
+            }
+        };
+
+        window.openStartMenu = function() {
+            isStartMenuOpen = true;
+            clearTimeout(menuHideTimeout);
+            resetStartMenuSubpanels();
+            syncDifficultyUI(); syncSoundUI();
+
+            const overlay = document.getElementById('start-menu-overlay');
+            overlay.style.display = 'flex';
+            overlay.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+
+            document.getElementById('top-hud-bar').classList.remove('hud-visible');
+            document.getElementById('top-hud-bar').classList.add('hud-top-hidden');
+            document.getElementById('bottom-dock-nav').classList.remove('hud-visible');
+            document.getElementById('bottom-dock-nav').classList.add('hud-hidden');
+            document.getElementById('puzzle-banner').classList.add('hidden');
+
+            document.getElementById('btn-resume-match').classList.toggle('hidden', !hasStartedMatchOnce);
+        };
+
+        let lastPlayedPuzzleKey = null;
+
+        function restartMatchWithAnimation() {
+            currentMoveAnim = null; isAnimating = false; hintsRemaining = 5; undosRemaining = MAX_UNDOS_PER_MATCH;
+            clearOracleHintVisuals();
+            if (gameMode === 'puzzles') {
+                WIZARD_PUZZLES = PUZZLE_TIERS[puzzleDifficulty] || PUZZLE_TIERS.apprentice;
+                const currentKey = `${puzzleDifficulty}-${currentPuzzleIndex}`;
+                // If this exact puzzle was just played, automatically advance to a different one
+                if (lastPlayedPuzzleKey === currentKey && WIZARD_PUZZLES.length > 1) {
+                    currentPuzzleIndex = (currentPuzzleIndex + 1) % WIZARD_PUZZLES.length;
+                }
+                lastPlayedPuzzleKey = `${puzzleDifficulty}-${currentPuzzleIndex}`;
+                loadPuzzleByIndex(currentPuzzleIndex);
+                return;
+            }
+            document.getElementById('puzzle-banner').classList.add('hidden');
+            chess.reset(); lastMoveSquares = []; clearSelectionAndHighlights();
+            syncBoardWithEngine(true); syncHintButtonUI(); sound.playSelect();
+            showToast(`New Match • ${gameMode === 'pvp' ? 'Pass & Play' : 'vs ' + DIFF_META[aiDifficulty].name}`);
+            if (gameMode === 'ai' && playerColor === 'b') setTimeout(makeWizardAIMove, 700);
+        }
+
+        window.handleVolumeSliderChange = v => { sound.setVolumePercent(v); if (v > 0 && !sound.enabled) sound.setMuted(false); syncSoundUI(); };
+        window.setAnimationSpeed = m => {
+            animSpeedMultiplier = Number(m);
+            document.getElementById('settings-anim-badge').textContent = `${m}x`;
+            [0.5, 1, 1.75, 4].forEach(s => document.getElementById(`anim-speed-${s}`)?.classList.toggle('active', s === m));
+            sound.playSelect();
+        };
+        window.cycleShatterIntensity = () => {
+            shatterShardCount = shatterShardCount === 34 ? 16 : (shatterShardCount === 16 ? 0 : 34);
+            document.getElementById('shatter-density-label').textContent = shatterShardCount ? `${shatterShardCount} Shards` : 'Disabled';
+            sound.playSelect();
+        };
+        window.toggleIdleBreathing = () => {
+            idleBreathingEnabled = !idleBreathingEnabled;
+            document.getElementById('idle-anim-label').textContent = idleBreathingEnabled ? 'Enabled' : 'Disabled';
+            sound.playSelect();
+        };
+        window.updateSavePathAddress = v => { saveFileAddress = v.trim() || 'cathedral_match.json'; document.getElementById('save-address-hint').textContent = `Target: ${saveFileAddress}`; };
+        window.toggleAutoSave = c => { autoSaveOnEnd = Boolean(c); };
+        window.chooseSaveFileLocation = () => { document.getElementById('save-file-address-input').focus(); showToast('Set desired filename above'); };
+
+        const CLOUD_ACTIVE_KEY = 'chess_wiz_cloud_active_match';
+        const CLOUD_PREV_GAME_KEY = 'chess_wiz_cloud_previous_match';
+
+        window.syncGameToCloud = async function(isSilent = true, isFinishedMatch = false) {
+            const payload = {
+                title: "Chess Wiz Cloud Save",
+                savedAt: new Date().toISOString(),
+                gameMode,
+                playerColor,
+                aiDifficulty,
+                fen: chess.fen(),
+                pgn: chess.pgn(),
+                historyVerbose: chess.history({ verbose: true })
+            };
+            const jsonStr = JSON.stringify(payload, null, 2);
+
+            // 1. Instant Cloud Storage Sync (Browser Cloud Storage + IndexedDB / Remote Sync)
+            try {
+                localStorage.setItem(CLOUD_ACTIVE_KEY, jsonStr);
+                if (isFinishedMatch || chess.history().length > 0) {
+                    localStorage.setItem(CLOUD_PREV_GAME_KEY, jsonStr);
+                }
+            } catch (e) {}
+
+            const hintEl = document.getElementById('save-address-hint');
+            if (hintEl) hintEl.textContent = `Cloud Synced • ${new Date().toLocaleTimeString()}`;
+            if (!isSilent) {
+                showToast('Match Saved to Cathedral Cloud ☁️');
+            }
+            return payload;
+        };
+
+        window.saveGameplayToFile = async function(silent = false) {
+            // Save to Cloud first
+            await syncGameToCloud(false, chess.game_over());
+
+            // Also download local backup file if requested manually
+            if (!silent) {
+                const data = JSON.stringify({
+                    title: "Chess Wiz Cloud & Local Save",
+                    savedAt: new Date().toISOString(),
+                    gameMode,
+                    playerColor,
+                    aiDifficulty,
+                    fen: chess.fen(),
+                    pgn: chess.pgn(),
+                    historyVerbose: chess.history({ verbose: true })
+                }, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'cathedral_match.json';
+                a.click();
+            }
+        };
+        window.exportPGNFile = function() {
+            const blob = new Blob([chess.pgn() || '*'], { type: 'text/plain' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'cathedral_match.pgn'; a.click();
+            showToast('Saved .PGN');
+        };
+        window.triggerLoadGameplayFile = () => document.getElementById('load-gameplay-input').click();
+        window.handleLoadGameplayFile = e => {
+            const f = e.target.files?.[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = ev => {
+                try {
+                    const d = JSON.parse(ev.target.result);
+                    if (d.fen) chess.load(d.fen);
+                    hasStartedMatchOnce = true; syncBoardWithEngine(true); closeStartMenu(false);
+                } catch (err) { showToast('Invalid save file'); }
+            };
+            r.readAsText(f);
+        };
+
+        function syncSoundUI() {
+            const ok = sound.enabled && sound.volumePercent > 0;
+            document.getElementById('sound-icon').textContent = ok ? 'volume_up' : 'volume_off';
+            document.getElementById('sound-label').textContent = ok ? `Sound: ${sound.volumePercent}%` : 'Muted';
+            document.getElementById('menu-sound-text').textContent = ok ? `Cathedral Audio: ${sound.volumePercent}%` : 'Audio: MUTED';
+            document.getElementById('settings-vol-badge').textContent = ok ? `${sound.volumePercent}%` : 'MUTED';
+        }
+        window.toggleSoundGlobal = () => { sound.setMuted(sound.enabled); syncSoundUI(); };
+
+        function updateUIStatus() {
+            const t = chess.turn(), badge = document.getElementById('turn-badge'), dot = document.getElementById('turn-dot'), st = document.getElementById('status-text');
+            const undoBtn = document.getElementById('btn-undo');
+            const undoLabel = document.getElementById('undo-label');
+            if (undoLabel) undoLabel.textContent = `Undo (${undosRemaining}/${MAX_UNDOS_PER_MATCH})`;
+            undoBtn.disabled = undosRemaining <= 0 || chess.history().length === 0 || isAnimating;
+            badge.classList.remove('check-alert');
+            if (chess.in_checkmate()) {
+                st.textContent = `Checkmate — ${t === 'w' ? 'Obsidian' : 'Marble'} Wins!`;
+            } else {
+                st.textContent = `${t === 'w' ? "White's Turn (Marble)" : "Black's Turn (Obsidian)"}${chess.in_check() ? ' — CHECK!' : ''}`;
+                dot.className = t === 'w' ? 'w-3 h-3 rounded-full bg-stone-100 shadow-[0_0_8px_#fff]' : 'w-3 h-3 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]';
+                if (chess.in_check()) badge.classList.add('check-alert');
+            }
+        }
+
+        function updateCapturedCounts() {
+            let w = 0, b = 0;
+            chess.history({ verbose: true }).forEach(m => { if (m.captured) m.color === 'w' ? w++ : b++; });
+            document.getElementById('captured-by-white').textContent = w;
+            document.getElementById('captured-by-black').textContent = b;
+        }
+
+        document.getElementById('btn-menu').onclick = () => { sound.playSelect(); openStartMenu(); };
+        document.getElementById('btn-new-game').onclick = restartMatchWithAnimation;
+        document.getElementById('btn-hint').onclick = triggerOracleHint;
+        document.getElementById('btn-customize-dock').onclick = () => { openStartMenu(); toggleStartCustomizePanel(); };
+        document.getElementById('btn-difficulty').onclick = () => {
+            if (gameMode !== 'ai') { gameMode = 'ai'; aiDifficulty = 'apprentice'; }
+            else if (aiDifficulty === 'apprentice') aiDifficulty = 'scholar';
+            else if (aiDifficulty === 'scholar') aiDifficulty = 'archmage';
+            else gameMode = 'pvp';
+            syncDifficultyUI(); updateUIStatus(); sound.playSelect();
+        };
+        document.getElementById('btn-camera').onclick = () => { currentPresetIdx = (currentPresetIdx + 1) % CAMERA_PRESETS.length; applyCameraPreset(currentPresetIdx); };
+        document.getElementById('btn-flip').onclick = () => {
+            boardSideAzimuth = boardSideAzimuth === 0 ? Math.PI : 0;
+            document.getElementById('flip-label').textContent = `Side: ${boardSideAzimuth === 0 ? 'White' : 'Black'}`;
+            applyCameraPreset(currentPresetIdx);
+        };
+        document.getElementById('btn-undo').onclick = () => {
+            if (isAnimating || !chess.history().length || undosRemaining <= 0) return;
+            undosRemaining = Math.max(0, undosRemaining - 1);
+
+            if (gameMode === 'puzzles') {
+                chess.undo();
+                puzzleWrongMoveActive = false;
+                const pz = WIZARD_PUZZLES[currentPuzzleIndex];
+                document.getElementById('puzzle-objective').textContent = `${pz.objective} • ${pz.description}`;
+            } else {
+                chess.undo();
+                if (gameMode === 'ai' && chess.turn() !== playerColor && chess.history().length) {
+                    chess.undo();
+                }
+            }
+
+            lastMoveSquares = [];
+            clearSelectionAndHighlights();
+            syncBoardWithEngine(false);
+            syncHintButtonUI();
+            sound.playMove();
+            showToast(`Turn Rewound (${undosRemaining}/3 Undos Left)`);
+        };
+        let lightMood = 0;
+        document.getElementById('btn-lighting').onclick = () => {
+            lightMood = (lightMood + 1) % 2;
+            mainSpotLight.color.setHex(lightMood ? 0xffd2a6 : 0xe4d9ff);
+            showToast(lightMood ? 'Lighting: Dragonfire Sanctuary' : 'Lighting: Moonlit Nave');
+        };
+        document.getElementById('btn-sound').onclick = toggleSoundGlobal;
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+        /* 11. ANIMATION LOOP WITH WATCHDOG */
+        const clock = new THREE.Clock();
+        let watchdog = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.1), elapsed = clock.getElapsedTime();
+
+            if (isAnimating) {
+                watchdog += dt;
+                if (watchdog > 3.5) { isAnimating = false; currentMoveAnim = null; watchdog = 0; syncBoardWithEngine(false); }
+            } else watchdog = 0;
+
+            if (isStartMenuOpen) { spherical.targetTheta += dt * 0.14; spherical.targetPhi = 0.78; spherical.targetRadius = 14.5; }
+            spherical.theta += (spherical.targetTheta - spherical.theta) * 0.09;
+            spherical.phi += (spherical.targetPhi - spherical.phi) * 0.09;
+            spherical.radius += (spherical.targetRadius - spherical.radius) * 0.09;
+
+            camera.position.set(
+                cameraTarget.x + spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta),
+                cameraTarget.y + spherical.radius * Math.cos(spherical.phi),
+                cameraTarget.z + spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta)
+            );
+            camera.lookAt(cameraTarget);
+
+            torchFlames.forEach(t => {
+                const s = 0.88 + Math.sin(elapsed * 9 + t.phase) * 0.16;
+                t.mesh.scale.set(s, s * 1.3, s);
+            });
+
+            for (const sq in pieceObjects) {
+                const p = pieceObjects[sq];
+                if (currentMoveAnim && (currentMoveAnim.attacker === p || currentMoveAnim.defender === p)) continue;
+                if (p.dropOffset > 0.005) { p.dropOffset *= Math.pow(0.001, dt * animSpeedMultiplier); if (p.dropOffset < 0.01) p.dropOffset = 0; }
+                const breath = idleBreathingEnabled ? Math.sin(elapsed * 2.2 + p.phase) * 0.03 : 0;
+                const lift = sq === selectedSquare ? 0.34 + Math.sin(elapsed * 5) * 0.05 : 0;
+                p.mesh.position.y = p.basePos.y + (p.dropOffset || 0) + Math.max(0, breath) + lift;
+            }
+            
+            // 4. Legal Move Highlight Rune & Floating Crystal Beacon Motion Animation
+            for (const sq in highlightMeshes) {
+                const hl = highlightMeshes[sq];
+                if (hl.group.visible) {
+                    hl.ring.rotation.z = elapsed * 1.2;
+                    hl.beacon.rotation.y = elapsed * 2.8;
+                    const pulse = 0.94 + Math.sin(elapsed * 5.5) * 0.08;
+                    hl.group.scale.set(pulse, 1, pulse);
+                }
+            }
+
+            // 4B. Animate Active Oracle Hint Trajectory Beacon if visible
+            if (activeHintGroup) {
+                activeHintGroup.children.forEach(child => {
+                    if (child.userData.isHintBeacon) {
+                        child.position.y = 1.35 + Math.sin(elapsed * 6) * 0.18;
+                        child.rotation.y = elapsed * 3.0;
+                    }
+                });
+            }
+            
+            if (currentMoveAnim) {
+                currentMoveAnim.elapsed += dt;
+                const u = Math.min(1, currentMoveAnim.elapsed / currentMoveAnim.duration);
+                const { attacker, defender, rookAnim, startPos, endPos } = currentMoveAnim;
+
+                if (!defender) {
+                    attacker.mesh.position.lerpVectors(startPos, endPos, u);
+                    attacker.mesh.position.y = Math.sin(u * Math.PI) * (attacker.type === 'n' ? 1.4 : 0.35);
+                    if (rookAnim) rookAnim.piece.mesh.position.lerpVectors(rookAnim.startPos, rookAnim.endPos, u);
+                } else {
+                    const dir = new THREE.Vector3().subVectors(endPos, startPos).normalize();
+                    const stopBefore = endPos.clone().addScaledVector(dir, -0.6);
+                    if (u < 0.6) {
+                        const p = u / 0.6;
+                        attacker.mesh.position.lerpVectors(startPos, stopBefore, p);
+                        attacker.mesh.position.y = Math.sin(p * Math.PI) * 0.5;
+                    } else {
+                        const p = (u - 0.6) / 0.4;
+                        attacker.mesh.position.lerpVectors(stopBefore, endPos, p);
+                        attacker.mesh.position.y = 0;
+                        if (!currentMoveAnim.shattered) {
+                            currentMoveAnim.shattered = true;
+                            sound.playShatter();
+                            spawnShatterEffect(defender.basePos, defender.color);
+                            pieceGroup.remove(defender.mesh);
+                            showToast(`${defender.color === 'w' ? 'Marble' : 'Obsidian'} ${pieceName(defender.type)} Shattered!`);
+                        }
+                    }
+                }
+                if (u >= 1) { const fin = currentMoveAnim; currentMoveAnim = null; finalizeAnimatedMove(fin); }
+            }
+
+            for (let i = activeFragments.length - 1; i >= 0; i--) {
+                const f = activeFragments[i]; f.age += dt;
+                if (f.age >= f.maxAge) { scene.remove(f.mesh); activeFragments.splice(i, 1); continue; }
+                f.vel.y -= 13.5 * dt; f.mesh.position.addScaledVector(f.vel, dt);
+                if (f.mesh.position.y < 0.08) { f.mesh.position.y = 0.08; f.vel.y = Math.abs(f.vel.y) * 0.4; f.vel.x *= 0.8; f.vel.z *= 0.8; }
+                f.mesh.rotation.x += f.rotVel.x * dt; f.mesh.rotation.y += f.rotVel.y * dt;
+                if (f.age > f.maxAge * 0.6) f.mesh.material.opacity = Math.max(0, 1 - (f.age - f.maxAge * 0.6) / (f.maxAge * 0.4));
+            }
+
+            for (let i = activeShockwaves.length - 1; i >= 0; i--) {
+                const sw = activeShockwaves[i]; sw.age += dt;
+                if (sw.age >= sw.maxAge) { scene.remove(sw.mesh); activeShockwaves.splice(i, 1); continue; }
+                const p = sw.age / sw.maxAge, sc = 1 + p * 4.5;
+                sw.mesh.scale.set(sc, 1, sc); sw.mesh.material.opacity = (1 - p) * 0.9;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = () => {
+            populateStartMenuPuzzles();
+            syncDifficultyUI(); syncSoundUI(); syncHintButtonUI();
+            syncBoardWithEngine(false); animate();
+        };
+      </script>
+        
+    <script>
+        // --- AUTHENTICATION, PROFILE CUSTOMIZATION & AI ELO SYSTEM ---
+        const PRESET_AVATARS = {
+            crown: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="%233b0764"/><path d="M12 46h40M16 46l3-20 13 10 8-18 8 18 13-10 3 20" fill="%23fbbf24" stroke="%23fef08a" stroke-width="2"/></svg>',
+            knight: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="%231e1b4b"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="%23c084fc">♞</text></svg>',
+            mage: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="%23064e3b"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="34" fill="%2334d399">⚡</text></svg>'
+        };
+
+        let currentAuthUser = localStorage.getItem('chess_wiz_auth_user') || null;
+        let currentDisplayName = localStorage.getItem('chess_wiz_display_name') || '';
+        let currentAvatarUrl = localStorage.getItem('chess_wiz_avatar') || PRESET_AVATARS.crown;
+        let playerAiElo = parseInt(localStorage.getItem('chess_wiz_ai_elo') || '1000', 10);
+        let authMode = 'signin';
+
+        function updateAuthHeaderUI() {
+            const btnLabel = document.getElementById('auth-header-label');
+            const avatarImg = document.getElementById('auth-header-avatar');
+            const defaultIcon = document.getElementById('auth-header-icon');
+            const eloBadge = document.getElementById('auth-header-elo');
+
+            if (currentAuthUser) {
+                const shownName = currentDisplayName || currentAuthUser.split('@')[0];
+                // Show full name up to 30 characters; truncate with ellipsis if it exceeds 30
+                if (btnLabel) btnLabel.textContent = shownName.length > 30 ? shownName.slice(0, 29) + '…' : shownName;
+
+                if (currentAvatarUrl && avatarImg) {
+                    avatarImg.src = currentAvatarUrl;
+                    avatarImg.classList.remove('hidden');
+                    defaultIcon?.classList.add('hidden');
+                } else {
+                    avatarImg?.classList.add('hidden');
+                    defaultIcon?.classList.remove('hidden');
+                }
+
+                if (eloBadge) {
+                    eloBadge.textContent = `${playerAiElo} ELO`;
+                    eloBadge.classList.remove('hidden');
+                }
+            } else {
+                if (btnLabel) btnLabel.textContent = 'Sign In';
+                avatarImg?.classList.add('hidden');
+                defaultIcon?.classList.remove('hidden');
+                eloBadge?.classList.add('hidden');
+            }
+        }
+
+        function showProfileEditorView() {
+            const guestSec = document.getElementById('auth-guest-section');
+            const profileSec = document.getElementById('auth-profile-section');
+            const titleEl = document.getElementById('auth-modal-title');
+            const subEl = document.getElementById('auth-modal-subtitle');
+            const topAvatar = document.getElementById('modal-top-avatar');
+            const topIcon = document.getElementById('modal-top-icon');
+
+            guestSec.classList.add('hidden');
+            profileSec.classList.remove('hidden');
+
+            titleEl.textContent = 'Wizard Profile & ELO';
+            subEl.textContent = `Signed in as ${currentAuthUser}`;
+            document.getElementById('profile-elo-display').textContent = `${playerAiElo} ELO`;
+
+            const defaultName = currentDisplayName || currentAuthUser.split('@')[0];
+            document.getElementById('profile-name-input').value = defaultName;
+
+            const preview = document.getElementById('profile-avatar-preview');
+            preview.src = currentAvatarUrl || PRESET_AVATARS.crown;
+
+            if (currentAvatarUrl) {
+                topAvatar.src = currentAvatarUrl;
+                topAvatar.classList.remove('hidden');
+                topIcon.classList.add('hidden');
+            }
+        }
+
+        window.selectPresetAvatar = function(key) {
+            if (PRESET_AVATARS[key]) {
+                currentAvatarUrl = PRESET_AVATARS[key];
+                document.getElementById('profile-avatar-preview').src = currentAvatarUrl;
+                document.getElementById('modal-top-avatar').src = currentAvatarUrl;
+                document.getElementById('modal-top-avatar').classList.remove('hidden');
+                document.getElementById('modal-top-icon').classList.add('hidden');
+                sound.playSelect();
+            }
+        };
+
+        window.handleAvatarFileUpload = function(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Resize to crisp 128x128 thumbnail so it saves cleanly in localStorage
+                    const c = document.createElement('canvas');
+                    c.width = 128; c.height = 128;
+                    const ctx = c.getContext('2d');
+                    const minDim = Math.min(img.width, img.height);
+                    ctx.drawImage(img, (img.width - minDim) / 2, (img.height - minDim) / 2, minDim, minDim, 0, 0, 128, 128);
+                    currentAvatarUrl = c.toDataURL('image/jpeg', 0.85);
+                    document.getElementById('profile-avatar-preview').src = currentAvatarUrl;
+                    document.getElementById('modal-top-avatar').src = currentAvatarUrl;
+                    document.getElementById('modal-top-avatar').classList.remove('hidden');
+                    document.getElementById('modal-top-icon').classList.add('hidden');
+                    sound.playSelect();
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveUserProfile = function() {
+            const nameVal = document.getElementById('profile-name-input').value.trim();
+            currentDisplayName = nameVal || (currentAuthUser ? currentAuthUser.split('@')[0] : 'Grandmaster');
+            localStorage.setItem('chess_wiz_display_name', currentDisplayName);
+            localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
+            localStorage.setItem('chess_wiz_ai_elo', String(playerAiElo));
+
+            updateAuthHeaderUI();
+            closeAuthModal();
+            sound.playFanfare();
+            showToast(`Profile Saved! Welcome, ${currentDisplayName} (${playerAiElo} ELO)`);
+        };
+
+        function completeUserSignIn(email, sourceLabel) {
+            currentAuthUser = email;
+            if (!localStorage.getItem('chess_wiz_display_name')) {
+                currentDisplayName = email.split('@')[0];
+                localStorage.setItem('chess_wiz_display_name', currentDisplayName);
+            }
+            if (!localStorage.getItem('chess_wiz_ai_elo')) {
+                playerAiElo = 1000;
+                localStorage.setItem('chess_wiz_ai_elo', '1000');
+            }
+            localStorage.setItem('chess_wiz_auth_user', currentAuthUser);
+            updateAuthHeaderUI();
+            sound.playFanfare();
+            showToast(`Signed in via ${sourceLabel}! Customize your profile below.`);
+
+            // Immediately transition the modal to the Profile Editor & ELO view (hiding sign-in options)
+            const modal = document.getElementById('auth-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            showProfileEditorView();
+            syncGameToCloud(true, chess.game_over());
+        }
+
+        window.switchAuthMode = function(mode) {
+            authMode = mode;
+            const titleEl = document.getElementById('auth-modal-title');
+            const subEl = document.getElementById('auth-modal-subtitle');
+            const confirmGroup = document.getElementById('auth-confirm-group');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const tabIn = document.getElementById('tab-signin');
+            const tabUp = document.getElementById('tab-signup');
+
+            if (mode === 'signup') {
+                titleEl.textContent = 'Create Cathedral Account';
+                subEl.textContent = 'Enter your email and create a password';
+                confirmGroup.classList.remove('hidden');
+                document.getElementById('auth-confirm-input').required = true;
+                submitBtn.textContent = 'Create Account';
+                tabUp.className = 'py-1.5 rounded-lg text-xs font-semibold text-white bg-purple-600/60 shadow-sm transition-all';
+                tabIn.className = 'py-1.5 rounded-lg text-xs font-semibold text-white/60 hover:text-white transition-all';
+            } else {
+                titleEl.textContent = 'Cathedral Sanctuary Account';
+                subEl.textContent = 'Sign in or create an account to sync cloud matches';
+                confirmGroup.classList.add('hidden');
+                document.getElementById('auth-confirm-input').required = false;
+                submitBtn.textContent = 'Sign In';
+                tabIn.className = 'py-1.5 rounded-lg text-xs font-semibold text-white bg-purple-600/60 shadow-sm transition-all';
+                tabUp.className = 'py-1.5 rounded-lg text-xs font-semibold text-white/60 hover:text-white transition-all';
+            }
+            sound.playSelect();
+        };
+
+        window.handleEmailAuthSubmit = function(event) {
+            event.preventDefault();
+            const email = document.getElementById('auth-email-input').value.trim();
+            const pass = document.getElementById('auth-pass-input').value;
+
+            if (authMode === 'signup') {
+                const confirmPass = document.getElementById('auth-confirm-input').value;
+                if (pass !== confirmPass) {
+                    sound.playCheck();
+                    showToast('Passwords do not match! Please check again.');
+                    return;
+                }
+            }
+            completeUserSignIn(email, authMode === 'signup' ? 'New Account' : 'Email');
+        };
+
+        window.openAuthModal = function() {
+            const modal = document.getElementById('auth-modal');
+            const guestSec = document.getElementById('auth-guest-section');
+            const profileSec = document.getElementById('auth-profile-section');
+
+            if (currentAuthUser) {
+                showProfileEditorView();
+            } else {
+                guestSec.classList.remove('hidden');
+                profileSec.classList.add('hidden');
+                document.getElementById('modal-top-avatar').classList.add('hidden');
+                document.getElementById('modal-top-icon').classList.remove('hidden');
+                switchAuthMode('signin');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            sound.playSelect();
+        };
+
+        window.closeAuthModal = function() {
+            const modal = document.getElementById('auth-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.handleSocialSignIn = function(provider) {
+            sound.playSelect();
+            const width = 460, height = 560;
+            const left = Math.round((window.screen.width - width) / 2);
+            const top = Math.round((window.screen.height - height) / 2);
+
+            const popup = window.open('about:blank', `${provider}SignInPopup`, `width=${width},height=${height},left=${left},top=${top}`);
+            if (!popup) { showToast('Please allow popups to sign in!'); return; }
+
+            const brand = {
+                Google: { title: 'Sign in with Google', accent: '#1a73e8', domain: 'gmail.com' },
+                Microsoft: { title: 'Sign in to Microsoft', accent: '#0067b8', domain: 'outlook.com' },
+                Apple: { title: 'Sign in with Apple ID', accent: '#0071e3', domain: 'icloud.com' }
+            }[provider];
+
+            const savedEmail = localStorage.getItem(`chess_wiz_last_${provider.toLowerCase()}`) || `sidharth@${brand.domain}`;
+
+            popup.document.write(`
+                <!DOCTYPE html><html><head><title>${brand.title}</title>
+                <style>
+                    body { font-family: sans-serif; padding: 28px; display: flex; align-items: center; justify-content: center; min-height: 85vh; margin: 0; }
+                    .card { max-width: 350px; width: 100%; border: 1px solid #ddd; border-radius: 12px; padding: 28px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); }
+                    h2 { margin: 0 0 6px; font-size: 20px; text-align: center; }
+                    p { margin: 0 0 18px; font-size: 13px; color: #666; text-align: center; }
+                    .acct { padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; margin-bottom: 14px; font-size: 13px; font-weight: 600; }
+                    .acct:hover { background: #f5f8ff; border-color: ${brand.accent}; }
+                    input { width: 100%; height: 38px; padding: 0 10px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+                    button { width: 100%; height: 38px; background: ${brand.accent}; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+                </style></head><body>
+                <div class="card">
+                    <h2>${brand.title}</h2>
+                    <p>Continue to <strong>Chess Wiz Cathedral</strong></p>
+                    <div class="acct" onclick="finish('${savedEmail}')">Continue as ${savedEmail}</div>
+                    <form onsubmit="event.preventDefault(); finish(document.getElementById('em').value);">
+                        <input type="email" id="em" placeholder="name@${brand.domain}" required />
+                        <input type="password" placeholder="Password" required />
+                        <button type="submit">Continue</button>
+                    </form>
+                </div>
+                <script>
+                    function finish(email) {
+                        window.opener.postMessage({ type: 'CHESS_WIZ_OAUTH_SUCCESS', provider: '${provider}', email: email.trim() }, '*');
+                        window.close();
+                    }
+                <\/script></body></html>
+            `);
+            popup.document.close();
+        };
+
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'CHESS_WIZ_OAUTH_SUCCESS') {
+                const { provider, email } = event.data;
+                localStorage.setItem(`chess_wiz_last_${provider.toLowerCase()}`, email);
+                completeUserSignIn(email, provider);
+            }
+        });
+
+        window.handleSignOut = function() {
+            currentAuthUser = null;
+            localStorage.removeItem('chess_wiz_auth_user');
+            updateAuthHeaderUI();
+            closeAuthModal();
+            sound.playSelect();
+            showToast('Signed out of Cathedral account.');
+        };
+
+        // Automatically adjust AI ELO when a match vs Wizard AI finishes
+        const originalShowGameOverModal = window.showGameOverModal || showGameOverModal;
+        showGameOverModal = function() {
+            if (gameMode === 'ai' && chess.game_over()) {
+                const aiEloMap = { apprentice: 800, scholar: 1200, archmage: 1650 };
+                const oppElo = aiEloMap[aiDifficulty] || 1200;
+                const expected = 1 / (1 + Math.pow(10, (oppElo - playerAiElo) / 400));
+                let actual = 0.5;
+                if (chess.in_checkmate()) {
+                    const winner = chess.turn() === 'w' ? 'b' : 'w';
+                    actual = winner === playerColor ? 1.0 : 0.0;
+                }
+                const delta = Math.round(32 * (actual - expected));
+                playerAiElo = Math.max(100, playerAiElo + delta);
+                localStorage.setItem('chess_wiz_ai_elo', String(playerAiElo));
+                updateAuthHeaderUI();
+                const sign = delta >= 0 ? `+${delta}` : `${delta}`;
+                showToast(`AI Rating Updated: ${playerAiElo} ELO (${sign})`);
+            }
+            originalShowGameOverModal();
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateAuthHeaderUI();
+        });
+    </script>
+
+        <!-- Authentication & Profile Modal -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="md3-surface rounded-3xl p-6 sm:p-7 max-w-sm w-full border border-purple-300/30 shadow-2xl relative text-center">
+            
+            <button type="button" onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/70 hover:text-white">
+                <span class="material-symbols-rounded !text-base">close</span>
+            </button>
+
+            <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center mx-auto mb-3 overflow-hidden">
+                <img id="modal-top-avatar" src="" class="w-full h-full object-cover hidden" />
+                <span id="modal-top-icon" class="material-symbols-rounded text-purple-200 !text-2xl">lock_person</span>
+            </div>
+
+            <h3 id="auth-modal-title" class="font-gothic text-lg font-bold text-white mb-1">Cathedral Sanctuary Account</h3>
+            <p id="auth-modal-subtitle" class="text-xs text-purple-200/70 mb-4">Sign in or create an account to sync cloud matches</p>
+
+            <!-- VIEW A: GUEST SIGN-IN / CREATE ACCOUNT OPTIONS (Hidden when Signed In) -->
+            <div id="auth-guest-section">
+                <div class="grid grid-cols-2 gap-1 p-1 bg-white/5 rounded-xl mb-4 border border-white/10">
+                    <button type="button" id="tab-signin" onclick="switchAuthMode('signin')" class="py-1.5 rounded-lg text-xs font-semibold text-white bg-purple-600/60 shadow-sm transition-all">Sign In</button>
+                    <button type="button" id="tab-signup" onclick="switchAuthMode('signup')" class="py-1.5 rounded-lg text-xs font-semibold text-white/60 hover:text-white transition-all">Create Account</button>
+                </div>
+
+                <form onsubmit="handleEmailAuthSubmit(event)" class="space-y-3 mb-4 text-left">
+                    <div>
+                        <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1">Email Address</label>
+                        <input type="email" id="auth-email-input" placeholder="player@cathedral.com" required class="w-full h-9 px-3 rounded-xl bg-black/45 border border-white/15 text-xs text-white font-mono focus:border-purple-400 outline-none" />
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1">Password</label>
+                        <input type="password" id="auth-pass-input" placeholder="••••••••" required class="w-full h-9 px-3 rounded-xl bg-black/45 border border-white/15 text-xs text-white font-mono focus:border-purple-400 outline-none" />
+                    </div>
+                    <div id="auth-confirm-group" class="hidden">
+                        <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1">Confirm Password</label>
+                        <input type="password" id="auth-confirm-input" placeholder="••••••••" class="w-full h-9 px-3 rounded-xl bg-black/45 border border-white/15 text-xs text-white font-mono focus:border-purple-400 outline-none" />
+                    </div>
+                    <button type="submit" id="auth-submit-btn" class="w-full md3-btn md3-btn-primary !h-9 !text-xs shadow-lg mt-1">Sign In</button>
+                </form>
+
+                <div class="relative flex py-1 items-center mb-3">
+                    <div class="flex-grow border-t border-white/10"></div>
+                    <span class="flex-shrink mx-3 text-[10px] text-white/40 uppercase tracking-widest font-semibold">Or Connect With</span>
+                    <div class="flex-grow border-t border-white/10"></div>
+                </div>
+
+                <div class="space-y-2 flex flex-col items-center">
+                    <button type="button" onclick="handleSocialSignIn('Google')" class="w-[210px] md3-btn !h-8 !justify-start !px-3 !bg-white/10 hover:!bg-white/15 border border-white/15 text-xs font-semibold text-white gap-2">
+                        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.1 8.9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.7s.2-2 .4-2.7L1.6 6.4C.6 8.4 0 10.6 0 13s.6 4.6 1.6 6.6l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5.3L1.6 15.6C3.5 19.4 7.4 23 12 23z"/></svg>
+                        <span>Sign in with Google</span>
+                    </button>
+                    <button type="button" onclick="handleSocialSignIn('Microsoft')" class="w-[210px] md3-btn !h-8 !justify-start !px-3 !bg-white/10 hover:!bg-white/15 border border-white/15 text-xs font-semibold text-white gap-2">
+                        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+                        <span>Sign in with Microsoft</span>
+                    </button>
+                    <button type="button" onclick="handleSocialSignIn('Apple')" class="w-[210px] md3-btn !h-8 !justify-start !px-3 !bg-white/10 hover:!bg-white/15 border border-white/15 text-xs font-semibold text-white gap-2">
+                        <svg class="w-3.5 h-3.5 shrink-0 fill-current" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.83 6.32c.57-.69 0.96-1.64.85-2.6-.84.04-1.87.56-2.45 1.25-.53.62-.99 1.58-.87 2.52.94.07 1.9-.47 2.47-1.17z"/></svg>
+                        <span>Sign in with Apple</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW B: SIGNED-IN PROFILE EDITOR & ELO VIEW (Shown immediately after Sign-In) -->
+            <div id="auth-profile-section" class="hidden space-y-3.5 text-left">
+                <div class="rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-amber-500/15 border border-amber-400/35 p-3 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-rounded text-amber-300 !text-2xl">workspace_premium</span>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-amber-200/80 font-semibold">Cathedral AI Rating</div>
+                            <div id="profile-elo-display" class="text-base font-black font-mono text-white">1000 ELO</div>
+                        </div>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-purple-200 font-medium">vs Wizard AI</span>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1">Wizard Display Name</label>
+                    <input type="text" id="profile-name-input" placeholder="Enter your display name" maxlength="20" class="w-full h-9 px-3 rounded-xl bg-black/45 border border-white/15 text-xs text-white font-semibold focus:border-purple-400 outline-none" />
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5">Profile Picture</label>
+                    <div class="flex items-center gap-3">
+                        <img id="profile-avatar-preview" src="" alt="Preview" class="w-12 h-12 rounded-2xl object-cover border-2 border-amber-400/50 bg-black/40 shrink-0" />
+                        <div class="flex-1 space-y-1.5">
+                            <button type="button" onclick="document.getElementById('profile-avatar-file').click()" class="w-full md3-btn md3-btn-tonal !h-8 !text-xs">
+                                <span class="material-symbols-rounded !text-sm">upload</span>
+                                <span>Upload Photo...</span>
+                            </button>
+                            <input type="file" id="profile-avatar-file" accept="image/*" class="hidden" onchange="handleAvatarFileUpload(event)" />
+                            <div class="flex items-center justify-between gap-1">
+                                <button type="button" onclick="selectPresetAvatar('crown')" class="flex-1 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-[10px] text-amber-200 text-center border border-white/10">👑 Crown</button>
+                                <button type="button" onclick="selectPresetAvatar('knight')" class="flex-1 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-[10px] text-purple-200 text-center border border-white/10">♞ Knight</button>
+                                <button type="button" onclick="selectPresetAvatar('mage')" class="flex-1 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-[10px] text-emerald-200 text-center border border-white/10">⚡ Archmage</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="saveUserProfile()" class="w-full md3-btn md3-btn-primary !h-10 !text-xs shadow-xl">
+                    <span class="material-symbols-rounded !text-base">check_circle</span>
+                    <span>Save Profile &amp; Continue</span>
+                </button>
+
+                <div class="pt-2 border-t border-white/10">
+                    <button type="button" onclick="handleSignOut()" class="w-full md3-btn !h-8 !bg-rose-500/20 hover:!bg-rose-500/30 text-rose-200 text-xs font-semibold">
+                        <span class="material-symbols-rounded !text-sm">logout</span>
+                        <span>Sign Out of Account</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
