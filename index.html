@@ -337,10 +337,22 @@
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">2. Cathedral Board Square Theme</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="theme-board-classic" onclick="applyBoardSquareTheme('classic')" class="menu-option-card active rounded-xl p-2 text-xs font-semibold text-white">Gothic Alabaster</button>
-                        <button type="button" id="theme-board-emerald" onclick="applyBoardSquareTheme('emerald')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Emerald Sanctum</button>
-                        <button type="button" id="theme-board-crimson" onclick="applyBoardSquareTheme('crimson')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Royal Crimson</button>
-                        <button type="button" id="theme-board-sapphire" onclick="applyBoardSquareTheme('sapphire')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Arcane Sapphire</button>
+                        <button type="button" id="theme-board-classic" onclick="applyBoardSquareTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="theme-swatch" style="background: linear-gradient(135deg, #f5f2eb 50%, #3b3355 50%);"></span>
+                            <span>Gothic Alabaster</span>
+                        </button>
+                        <button type="button" id="theme-board-emerald" onclick="applyBoardSquareTheme('emerald', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="theme-swatch" style="background: linear-gradient(135deg, #d8f3dc 50%, #134e4a 50%);"></span>
+                            <span>Emerald Sanctum</span>
+                        </button>
+                        <button type="button" id="theme-board-crimson" onclick="applyBoardSquareTheme('crimson', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="theme-swatch" style="background: linear-gradient(135deg, #f9eae1 50%, #6b1426 50%);"></span>
+                            <span>Royal Crimson</span>
+                        </button>
+                        <button type="button" id="theme-board-sapphire" onclick="applyBoardSquareTheme('sapphire', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="theme-swatch" style="background: linear-gradient(135deg, #e0f2fe 50%, #1e3a8a 50%);"></span>
+                            <span>Arcane Sapphire</span>
+                        </button>
                     </div>
                 </div>
 
@@ -356,13 +368,24 @@
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">4. Sculpted Piece Vessels &amp; Runes</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="theme-piece-classic" onclick="applyPieceTheme('classic')" class="menu-option-card active rounded-xl p-2 text-xs font-semibold text-white">Marble vs Obsidian</button>
-                        <button type="button" id="theme-piece-royal" onclick="applyPieceTheme('royal')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Ivory Gold vs Ebony</button>
-                        <button type="button" id="theme-piece-jade" onclick="applyPieceTheme('jade')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Celestial Jade vs Ruby</button>
-                        <button type="button" id="theme-piece-frost" onclick="applyPieceTheme('frost')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Frost vs Nether</button>
+                        <button type="button" id="theme-piece-classic" onclick="applyPieceTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="theme-swatch" style="background: linear-gradient(135deg, #f7f4ef 50%, #161224 50%);"></span>
+                            <span>Marble vs Obsidian</span>
+                        </button>
+                        <button type="button" id="theme-piece-royal" onclick="applyPieceTheme('royal', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="theme-swatch" style="background: linear-gradient(135deg, #fef3c7 50%, #1c1917 50%);"></span>
+                            <span>Ivory Gold vs Ebony</span>
+                        </button>
+                        <button type="button" id="theme-piece-jade" onclick="applyPieceTheme('jade', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="theme-swatch" style="background: linear-gradient(135deg, #a7f3d0 50%, #4c0519 50%);"></span>
+                            <span>Celestial Jade vs Ruby</span>
+                        </button>
+                        <button type="button" id="theme-piece-frost" onclick="applyPieceTheme('frost', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="theme-swatch" style="background: linear-gradient(135deg, #e0f2fe 50%, #2e1065 50%);"></span>
+                            <span>Frost vs Nether</span>
+                        </button>
                     </div>
                 </div>
-            </div>
 
             <!-- 5. START MENU ANALYSE VIEW (Previous Cloud Game or File Explorer Import) -->
             <div id="start-menu-analyse-view" class="hidden space-y-3">
@@ -1644,28 +1667,10 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             showToast(areSquaresVisible ? 'Board Squares: Shown (Default)' : 'Board Squares: Hidden');
         };
             const BOARD_THEMES = {
-                    classic: { light: 0xf5f2eb, dark: 0x3b3355, name: 'Gothic Alabaster' },
-                    emerald: { light: 0xd8f3dc, dark: 0x134e4a, name: 'Emerald Sanctum' },
-                    crimson: { light: 0xf9eae1, dark: 0x6b1426, name: 'Royal Crimson' },
-                    sapphire: { light: 0xe0f2fe, dark: 0x1e3a8a, name: 'Arcane Sapphire' }
-             };
-        window.applyBoardSquareTheme = function(k) {
-            const t = BOARD_THEMES[k]; if (!t) return;
-            for (const sq in squareMeshes) squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
-            ['classic', 'emerald', 'crimson', 'sapphire'].forEach(id => document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k));
-            sound.playSelect(); showToast(`Board Theme: ${t.name}`);
-        };
-
-        const FRAME_THEMES = {
-            bronze: { frame: 0x262135, trim: 0x9370db, name: 'Cathedral Bronze' },
-            gold: { frame: 0x42331b, trim: 0xfbbf24, name: 'Royal Gold' },
-            iron: { frame: 0x121216, trim: 0x52525b, name: 'Obsidian Iron' }
-        };
-        window.applyBoardFrameTheme = function(k) {
-            const t = FRAME_THEMES[k]; if (!t) return;
-            boardFrameMesh.material.color.setHex(t.frame); boardTrimMesh.material.color.setHex(t.trim);
-            ['bronze', 'gold', 'iron'].forEach(id => document.getElementById(`theme-frame-${id}`)?.classList.toggle('active', id === k));
-            sound.playSelect(); showToast(`Altar Frame: ${t.name}`);
+            classic: { light: 0xf5f2eb, dark: 0x3b3355, bgHex: 0x0b0912, name: 'Gothic Alabaster' },
+            emerald: { light: 0xd8f3dc, dark: 0x134e4a, bgHex: 0x061a18, name: 'Emerald Sanctum' },
+            crimson: { light: 0xf9eae1, dark: 0x6b1426, bgHex: 0x1a0b10, name: 'Royal Crimson' },
+            sapphire: { light: 0xe0f2fe, dark: 0x1e3a8a, bgHex: 0x081026, name: 'Arcane Sapphire' }
         };
 
         const PIECE_THEMES = {
@@ -1674,13 +1679,53 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             jade: { wC: 0xa7f3d0, wR: 0x10b981, bC: 0x4c0519, bR: 0xfb7185, name: 'Celestial Jade vs Ruby' },
             frost: { wC: 0xe0f2fe, wR: 0x38bdf8, bC: 0x2e1065, bR: 0xc084fc, name: 'Frost vs Nether' }
         };
-        window.applyPieceTheme = function(k) {
+
+        // Helper to get account-specific storage key
+        function getUserThemeKey(prefType) {
+            const userKey = currentAuthUser ? currentAuthUser.toLowerCase().trim() : 'guest';
+            return `chess_wiz_${userKey}_${prefType}`;
+        }
+
+        window.applyBoardSquareTheme = function(k, saveToAccount = false) {
+            const t = BOARD_THEMES[k]; if (!t) return;
+            for (const sq in squareMeshes) squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
+            ['classic', 'emerald', 'crimson', 'sapphire'].forEach(id => document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k));
+            
+            // Dynamic Background & Fog Color Change matching the board theme
+            scene.background.setHex(t.bgHex);
+            scene.fog.color.setHex(t.bgHex);
+
+            if (saveToAccount) {
+                localStorage.setItem(getUserThemeKey('board_theme'), k);
+                showToast(`Board Theme Saved for ${currentAuthUser || 'Guest'}: ${t.name}`);
+            } else {
+                showToast(`Board Theme: ${t.name}`);
+            }
+            sound.playSelect();
+        };
+
+        window.applyPieceTheme = function(k, saveToAccount = false) {
             const t = PIECE_THEMES[k]; if (!t) return;
             whitePieceMaterial.color.setHex(t.wC); whiteRuneMat.color.setHex(t.wR);
             blackPieceMaterial.color.setHex(t.bC); blackRuneMat.color.setHex(t.bR);
             ['classic', 'royal', 'jade', 'frost'].forEach(id => document.getElementById(`theme-piece-${id}`)?.classList.toggle('active', id === k));
-            sound.playSelect(); showToast(`Pieces: ${t.name}`);
+            
+            if (saveToAccount) {
+                localStorage.setItem(getUserThemeKey('piece_theme'), k);
+                showToast(`Piece Theme Saved for ${currentAuthUser || 'Guest'}: ${t.name}`);
+            } else {
+                showToast(`Pieces: ${t.name}`);
+            }
+            sound.playSelect();
         };
+
+        // Load account-specific themes upon login or startup
+        function loadAccountThemePreferences() {
+            const savedBoard = localStorage.getItem(getUserThemeKey('board_theme')) || 'classic';
+            const savedPieces = localStorage.getItem(getUserThemeKey('piece_theme')) || 'classic';
+            applyBoardSquareTheme(savedBoard, false);
+            applyPieceTheme(savedPieces, false);
+        }
 
         /* 8. WIZARD AI */
         const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
@@ -2741,6 +2786,7 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             modal.classList.add('flex');
             showProfileEditorView();
             syncGameToCloud(true, chess.game_over());
+            loadAccountThemePreferences();
         }
 
         // Keep session synced with Firebase Auth state
@@ -2922,6 +2968,16 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             popup.document.write(`
                 <!DOCTYPE html><html><head><title>${brand.title}</title>
                 <style>
+                    /* Diagonal split-color swatch for theme buttons */
+                    .theme-swatch {
+                        width: 16px;
+                        height: 16px;
+                        border-radius: 4px;
+                        display: inline-block;
+                        border: 1px solid rgba(255,255,255,0.25);
+                        flex-shrink: 0;
+                    }
+
                     body { font-family: sans-serif; padding: 28px; display: flex; align-items: center; justify-content: center; min-height: 85vh; margin: 0; }
                     .card { max-width: 350px; width: 100%; border: 1px solid #ddd; border-radius: 12px; padding: 28px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); }
                     h2 { margin: 0 0 6px; font-size: 20px; text-align: center; }
