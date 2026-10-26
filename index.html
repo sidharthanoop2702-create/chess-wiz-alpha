@@ -519,7 +519,7 @@
     </div>
 
     <!-- Toast Banner -->
-    <div id="event-toast" class="fixed top-36 sm:top-24 left-1/2 -translate-x-1/2 z-30 pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-2">
+    <div id="event-toast" class="fixed top-36 sm:top-24 left-1/2 -translate-x-1/2 z-[60] pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-2">
         <div class="md3-surface rounded-full px-5 py-1.5 text-xs sm:text-sm font-semibold text-amber-200 border border-amber-400/30 flex items-center gap-2">
             <span class="material-symbols-rounded text-amber-300 text-base">auto_awesome</span>
             <span id="event-toast-text">Obsidian Knight Shattered!</span>
@@ -2639,7 +2639,7 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             showToast(`Profile Saved! Welcome, ${currentDisplayName} (${playerAiElo} ELO)`);
         };
 
-        function completeUserSignIn(email, sourceLabel, providerPhotoUrl = null, providerName = null) {
+        function completeUserSignIn(email, sourceLabel, providerPhotoUrl = null, providerName = null, customToastMsg = null) {
             currentAuthUser = email;
             if (!localStorage.getItem('chess_wiz_display_name')) {
                 currentDisplayName = providerName || email.split('@')[0];
@@ -2656,7 +2656,7 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             localStorage.setItem('chess_wiz_auth_user', currentAuthUser);
             updateAuthHeaderUI();
             sound.playFanfare();
-            showToast(`Signed in via ${sourceLabel}! Customize your profile below.`);
+            showToast(customToastMsg || `Signed in via ${sourceLabel}!`);
 
             const modal = document.getElementById('auth-modal');
             modal.classList.remove('hidden');
@@ -2713,11 +2713,17 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             sound.playSelect();
         };
 
-        // Real Email & Password Sign-In / Sign-Up via Firebase
+        // Email & Password Sign-In / Sign-Up with Custom Messages & Local Account Vault
         window.handleEmailAuthSubmit = async function(event) {
             event.preventDefault();
-            const email = document.getElementById('auth-email-input').value.trim();
+            const email = document.getElementById('auth-email-input').value.trim().toLowerCase();
             const pass = document.getElementById('auth-pass-input').value;
+
+            if (!email || !pass) {
+                sound.playCheck();
+                showToast('Please enter both email and password.');
+                return;
+            }
 
             if (authMode === 'signup') {
                 const confirmPass = document.getElementById('auth-confirm-input').value;
@@ -2726,23 +2732,69 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                     showToast('Passwords do not match! Please check again.');
                     return;
                 }
+                if (pass.length < 6) {
+                    sound.playCheck();
+                    showToast('Password must be at least 6 characters.');
+                    return;
+                }
             }
 
+            const accountsVault = JSON.parse(localStorage.getItem('chess_wiz_accounts_db') || '{}');
+
+            // 1. Try Firebase Auth first if available
             if (firebaseAuth) {
                 try {
-                    let cred;
                     if (authMode === 'signup') {
-                        cred = await firebaseAuth.createUserWithEmailAndPassword(email, pass);
+                        const cred = await firebaseAuth.createUserWithEmailAndPassword(email, pass);
+                        accountsVault[email] = pass;
+                        localStorage.setItem('chess_wiz_accounts_db', JSON.stringify(accountsVault));
+                        completeUserSignIn(cred.user.email, 'New Account', cred.user.photoURL, cred.user.displayName, 'Account created successfully');
                     } else {
-                        cred = await firebaseAuth.signInWithEmailAndPassword(email, pass);
+                        const cred = await firebaseAuth.signInWithEmailAndPassword(email, pass);
+                        completeUserSignIn(cred.user.email, 'Email', cred.user.photoURL, cred.user.displayName, 'Signed In successfully');
                     }
-                    completeUserSignIn(cred.user.email, authMode === 'signup' ? 'New Account' : 'Email', cred.user.photoURL, cred.user.displayName);
+                    return;
                 } catch (err) {
-                    sound.playCheck();
-                    showToast(err.message.replace('Firebase: ', ''));
+                    const code = err.code || '';
+                    if (
+                        code === 'auth/user-not-found' ||
+                        code === 'auth/wrong-password' ||
+                        code === 'auth/invalid-credential' ||
+                        code === 'auth/invalid-login-credentials'
+                    ) {
+                        if (authMode === 'signin' && accountsVault[email] && accountsVault[email] === pass) {
+                            completeUserSignIn(email, 'Email', null, null, 'Signed In successfully');
+                            return;
+                        }
+                        sound.playCheck();
+                        showToast('User name or Password is Incorrect');
+                        return;
+                    }
+                    if (code === 'auth/email-already-in-use') {
+                        sound.playCheck();
+                        showToast('An account with this email already exists!');
+                        return;
+                    }
                 }
+            }
+
+            // 2. Instant Local Account Vault (Fallback)
+            if (authMode === 'signup') {
+                if (accountsVault[email]) {
+                    sound.playCheck();
+                    showToast('An account with this email already exists!');
+                    return;
+                }
+                accountsVault[email] = pass;
+                localStorage.setItem('chess_wiz_accounts_db', JSON.stringify(accountsVault));
+                completeUserSignIn(email, 'New Account', null, null, 'Account created successfully');
             } else {
-                showToast('Paste your firebaseConfig in the script first!');
+                if (!accountsVault[email] || accountsVault[email] !== pass) {
+                    sound.playCheck();
+                    showToast('User name or Password is Incorrect');
+                    return;
+                }
+                completeUserSignIn(email, 'Email', null, null, 'Signed In successfully');
             }
         };
 
