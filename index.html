@@ -3105,25 +3105,52 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             askOracleBot(val);
         };
 
-        window.handleBugReportSubmit = function(e) {
+        window.handleBugReportSubmit = async function(e) {
             e.preventDefault();
             const type = document.getElementById('bug-subject-input').value;
-            const desc = document.getElementById('bug-message-input').value.trim();
+            const descInput = document.getElementById('bug-message-input');
+            const desc = descInput.value.trim();
             if (!desc) return;
 
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const origHTML = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Sending...</span>';
+
             const userTag = currentAuthUser ? `${currentDisplayName} (${currentAuthUser})` : 'Guest Player';
-            const subject = encodeURIComponent(`[Chess Wiz ${type}] from ${userTag}`);
-            const body = encodeURIComponent(`Issue Type: ${type}\nPlayer: ${userTag}\nGame Mode: ${gameMode}\n\nDescription:\n${desc}`);
 
-            window.open(`mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`, '_blank');
-            document.getElementById('bug-message-input').value = '';
-            sound.playFanfare();
-            showToast('Opening your email client to send the report!');
+            try {
+                const res = await fetch(`https://formsubmit.co/ajax/${DEVELOPER_EMAIL}`, {
+                    method: "POST",
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        _subject: `[Chess Wiz ${type}] from ${userTag}`,
+                        Issue_Type: type,
+                        Player: userTag,
+                        Game_Mode: gameMode,
+                        Message: desc
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    descInput.value = '';
+                    sound.playFanfare();
+                    showToast('Report sent directly to developer inbox!');
+                } else {
+                    throw new Error(data.message || 'Failed to send');
+                }
+            } catch (err) {
+                sound.playCheck();
+                showToast('Could not send report. Check your internet connection.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = origHTML;
+            }
         };
-
-        window.addEventListener('DOMContentLoaded', () => {
-            updateAuthHeaderUI();
-        });
     </script>
 
         <!-- Authentication & Profile Modal -->
