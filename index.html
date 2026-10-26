@@ -601,6 +601,84 @@
         </div>
     </nav>
 
+    <!-- Bottom-Left In-Game Help Button & AI Chatbot Drawer -->
+    <div id="in-game-help-container" class="fixed bottom-5 left-5 z-40">
+        <!-- Floating Help Trigger Button -->
+        <button type="button" onclick="toggleHelpChatbot()" id="btn-help-trigger" class="md3-surface md3-btn !h-11 !px-4 rounded-full border border-purple-300/40 shadow-2xl flex items-center gap-2 text-purple-200 hover:text-white">
+            <span class="material-symbols-rounded text-amber-300 !text-xl">support_agent</span>
+            <span class="font-semibold text-xs sm:text-sm">Help &amp; AI</span>
+        </button>
+
+        <!-- Pop-up Chatbot & Issue Reporter Panel -->
+        <div id="help-chatbot-panel" class="hidden absolute bottom-14 left-0 w-80 sm:w-96 md3-surface rounded-3xl border border-purple-300/35 shadow-2xl overflow-hidden flex flex-col">
+            <!-- Header -->
+            <div class="p-3.5 bg-white/5 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-rounded text-amber-300">auto_awesome</span>
+                    <div>
+                        <div class="text-xs font-bold text-white font-gothic">Cathedral Oracle AI</div>
+                        <div class="text-[10px] text-purple-200/70">App Guide &amp; Bug Support</div>
+                    </div>
+                </div>
+                <button type="button" onclick="toggleHelpChatbot()" class="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/70 hover:text-white">
+                    <span class="material-symbols-rounded !text-base">close</span>
+                </button>
+            </div>
+
+            <!-- Mode Tabs: AI Guide vs Report Bug -->
+            <div class="grid grid-cols-2 gap-1 p-1.5 bg-black/30 border-b border-white/10">
+                <button type="button" id="help-tab-chat" onclick="switchHelpTab('chat')" class="py-1 rounded-xl text-[11px] font-semibold text-white bg-purple-600/60 transition-all">AI Assistant</button>
+                <button type="button" id="help-tab-bug" onclick="switchHelpTab('bug')" class="py-1 rounded-xl text-[11px] font-semibold text-white/60 hover:text-white transition-all">Report Issue / Bug</button>
+            </div>
+
+            <!-- TAB 1: AI Chatbot View -->
+            <div id="help-chat-view" class="flex flex-col h-72">
+                <div id="help-chat-messages" class="flex-1 p-3 overflow-y-auto space-y-2.5 text-xs">
+                    <div class="bg-white/10 text-purple-100 rounded-2xl rounded-tl-sm p-2.5 leading-relaxed">
+                        Greetings, Grandmaster! Ask me anything about how to play, use Hints/Undos, solve Puzzles, or customize your board!
+                    </div>
+                </div>
+                <!-- Quick Question Chips -->
+                <div class="px-3 py-1.5 flex gap-1.5 overflow-x-auto border-t border-white/5 text-[10px]">
+                    <button type="button" onclick="askOracleBot('How do puzzles work?')" class="px-2.5 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-200 shrink-0 hover:bg-purple-500/35">Puzzles?</button>
+                    <button type="button" onclick="askOracleBot('How to use hints and undo?')" class="px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-200 shrink-0 hover:bg-amber-500/35">Hints &amp; Undo?</button>
+                    <button type="button" onclick="askOracleBot('How do I save or load my game?')" class="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 shrink-0 hover:bg-emerald-500/35">Save Game?</button>
+                </div>
+                <!-- Input Row -->
+                <form onsubmit="handleChatSubmit(event)" class="p-2.5 bg-black/40 border-t border-white/10 flex gap-1.5">
+                    <input type="text" id="help-chat-input" placeholder="Ask how to use Chess Wiz..." class="flex-1 h-8 px-3 rounded-full bg-white/5 border border-white/15 text-xs text-white outline-none focus:border-purple-400" />
+                    <button type="submit" class="md3-btn md3-btn-primary !h-8 !px-3 !text-xs">
+                        <span class="material-symbols-rounded !text-sm">send</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- TAB 2: Send Bug / Issue to Your Email -->
+            <form id="help-bug-view" onsubmit="handleBugReportSubmit(event)" class="hidden p-3.5 space-y-2.5 text-left">
+                <div class="text-[11px] text-purple-200/80 leading-relaxed">
+                    Found a bug or have feedback? Send a message directly to the developer's email:
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1">Issue Type</label>
+                    <select id="bug-subject-input" class="w-full h-8 px-2.5 rounded-xl bg-black/60 border border-white/15 text-xs text-white outline-none">
+                        <option value="Bug Report">🐞 Bug Report</option>
+                        <option value="Gameplay / Puzzle Issue">♟️ Gameplay / Puzzle Issue</option>
+                        <option value="Account / Sign-In Help">🔐 Account / Sign-In Help</option>
+                        <option value="Feature Suggestion">✨ Feature Suggestion</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1">Describe the Issue</label>
+                    <textarea id="bug-message-input" rows="4" required placeholder="Describe what happened..." class="w-full p-2.5 rounded-xl bg-black/45 border border-white/15 text-xs text-white outline-none focus:border-purple-400 resize-none"></textarea>
+                </div>
+                <button type="submit" class="w-full md3-btn md3-btn-primary !h-9 !text-xs shadow-lg">
+                    <span class="material-symbols-rounded !text-sm">mail</span>
+                    <span>Send Message to Developer</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
         /* 1. SOUND & INSTANT HAPTIC ENGINE */
         class SoundEngine {
@@ -2938,6 +3016,109 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 showToast(`AI Rating Updated: ${playerAiElo} ELO (${sign})`);
             }
             originalShowGameOverModal();
+        };
+
+        // 👇 PUT YOUR EMAIL ID HERE TO RECEIVE BUG REPORTS 👇
+        const DEVELOPER_EMAIL = "sidharthanoop2702@gmail.com";
+
+        window.toggleHelpChatbot = function() {
+            const panel = document.getElementById('help-chatbot-panel');
+            if (!panel) return;
+            panel.classList.toggle('hidden');
+            sound.playSelect();
+        };
+
+        window.switchHelpTab = function(tab) {
+            const chatView = document.getElementById('help-chat-view');
+            const bugView = document.getElementById('help-bug-view');
+            const tabChat = document.getElementById('help-tab-chat');
+            const tabBug = document.getElementById('help-tab-bug');
+
+            if (tab === 'bug') {
+                chatView.classList.add('hidden');
+                bugView.classList.remove('hidden');
+                tabBug.className = 'py-1 rounded-xl text-[11px] font-semibold text-white bg-purple-600/60 transition-all';
+                tabChat.className = 'py-1 rounded-xl text-[11px] font-semibold text-white/60 hover:text-white transition-all';
+            } else {
+                bugView.classList.add('hidden');
+                chatView.classList.remove('hidden');
+                tabChat.className = 'py-1 rounded-xl text-[11px] font-semibold text-white bg-purple-600/60 transition-all';
+                tabBug.className = 'py-1 rounded-xl text-[11px] font-semibold text-white/60 hover:text-white transition-all';
+            }
+            sound.playSelect();
+        };
+
+        function getOracleBotReply(q) {
+            const text = q.toLowerCase();
+            if (text.includes('puzzle') || text.includes('trial')) {
+                return "In **Puzzles Mode**, choose Apprentice, Scholar, or Archmage in the Menu, select a trial, and click **Enter the Cathedral**. Solve all 3 trials in a tier to automatically unlock a brand-new set! You get 3 Hints and 3 Undos per puzzle.";
+            }
+            if (text.includes('hint') || text.includes('undo')) {
+                return "Click **Hints** in the bottom dock (or the left Puzzle HUD) to see a golden trajectory arc showing the best move. Click **Undo** to rewind up to 3 mistakes per match!";
+            }
+            if (text.includes('camera') || text.includes('rotate') || text.includes('view') || text.includes('zoom')) {
+                return "Drag anywhere with your mouse/finger to orbit the 3D camera, scroll to zoom, or click **Optimal 58°** in the bottom dock to cycle camera presets. Use **Side** to flip between White and Black.";
+            }
+            if (text.includes('save') || text.includes('load') || text.includes('continue') || text.includes('cloud')) {
+                return "Your matches auto-sync to Cathedral Cloud! You can also click **Menu → Settings** to export `.JSON` or `.PGN` files, or click **Continue Game** on the Start Menu to resume an incomplete match.";
+            }
+            if (text.includes('customize') || text.includes('theme') || text.includes('board') || text.includes('piece')) {
+                return "Click **Board** on the bottom dock (or **Customize** in the Start Menu) to change square colors, altar frames, piece materials, or hide/show board squares.";
+            }
+            if (text.includes('elo') || text.includes('account') || text.includes('profile') || text.includes('avatar')) {
+                return "Click the **Sign In / Profile** button in the top-right of the Start Menu to customize your display name, hover over your avatar to add/remove your photo, and track your AI ELO rating!";
+            }
+            if (text.includes('bug') || text.includes('issue') || text.includes('error') || text.includes('broken')) {
+                return "Sorry you ran into an issue! Click the **Report Issue / Bug** tab right above this chat to send an email directly to the developer.";
+            }
+            return "I can help with **Gameplay Controls**, **Puzzles**, **Hints & Undos**, **Saving/Loading**, **Board Customization**, or **ELO & Profiles**. Or switch to the **Report Issue / Bug** tab above to email the developer!";
+        }
+
+        window.askOracleBot = function(questionText) {
+            const box = document.getElementById('help-chat-messages');
+            if (!box) return;
+
+            // User bubble
+            const userDiv = document.createElement('div');
+            userDiv.className = 'bg-purple-600/40 border border-purple-400/30 text-white rounded-2xl rounded-tr-sm p-2.5 ml-6 text-right';
+            userDiv.textContent = questionText;
+            box.appendChild(userDiv);
+            box.scrollTop = box.scrollHeight;
+            sound.playSelect();
+
+            // AI reply bubble
+            setTimeout(() => {
+                const botDiv = document.createElement('div');
+                botDiv.className = 'bg-white/10 text-purple-100 rounded-2xl rounded-tl-sm p-2.5 mr-4 leading-relaxed';
+                botDiv.innerHTML = getOracleBotReply(questionText).replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-200">$1</strong>');
+                box.appendChild(botDiv);
+                box.scrollTop = box.scrollHeight;
+            }, 260);
+        };
+
+        window.handleChatSubmit = function(e) {
+            e.preventDefault();
+            const inp = document.getElementById('help-chat-input');
+            const val = inp.value.trim();
+            if (!val) return;
+            inp.value = '';
+            askOracleBot(val);
+        };
+
+        window.handleBugReportSubmit = function(e) {
+            e.preventDefault();
+            const type = document.getElementById('bug-subject-input').value;
+            const desc = document.getElementById('bug-message-input').value.trim();
+            if (!desc) return;
+
+            const userTag = currentAuthUser ? `${currentDisplayName} (${currentAuthUser})` : 'Guest Player';
+            const subject = encodeURIComponent(`[Chess Wiz ${type}] from ${userTag}`);
+            const body = encodeURIComponent(`Issue Type: ${type}\nPlayer: ${userTag}\nGame Mode: ${gameMode}\n\nDescription:\n${desc}`);
+
+            window.open(`mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`, '_blank');
+            document.getElementById('bug-message-input').value = '';
+            sound.playFanfare();
+            showToast('Opening your email client to send the report!');
         };
 
         window.addEventListener('DOMContentLoaded', () => {
