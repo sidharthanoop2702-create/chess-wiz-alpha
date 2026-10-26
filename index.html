@@ -13,6 +13,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <style>
         :root {
             --surface: rgba(26, 24, 32, 0.85);
@@ -2113,32 +2115,11 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             }
         };
 
-        window.openStartMenu = function() {
-            isStartMenuOpen = true;
-            clearTimeout(menuHideTimeout);
-            resetStartMenuSubpanels();
-            syncDifficultyUI(); syncSoundUI();
-
-            const overlay = document.getElementById('start-menu-overlay');
-            overlay.style.display = 'flex';
-            overlay.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-
-            document.getElementById('top-hud-bar').classList.remove('hud-visible');
-            document.getElementById('top-hud-bar').classList.add('hud-top-hidden');
-            document.getElementById('bottom-dock-nav').classList.remove('hud-visible');
-            document.getElementById('bottom-dock-nav').classList.add('hud-hidden');
-            document.getElementById('puzzle-banner').classList.add('hidden');
-
-            document.getElementById('btn-resume-match').classList.toggle('hidden', !hasStartedMatchOnce);
-        };
-
-        let lastPlayedPuzzleKey = null;
-
         function restartMatchWithAnimation() {
             currentMoveAnim = null; isAnimating = false; hintsRemaining = 5; undosRemaining = MAX_UNDOS_PER_MATCH;
             clearOracleHintVisuals();
             if (gameMode === 'puzzles') {
-                WIZARD_PUZZLES = PUZZLE_TIERS[puzzleDifficulty] || PUZZLE_TIERS.apprentice;
+                WIZARD_PUZZLES = buildActivePuzzlesForTier(puzzleDifficulty);
                 const currentKey = `${puzzleDifficulty}-${currentPuzzleIndex}`;
                 // If this exact puzzle was just played, automatically advance to a different one
                 if (lastPlayedPuzzleKey === currentKey && WIZARD_PUZZLES.length > 1) {
@@ -2451,6 +2432,32 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
         
     <script>
         // --- AUTHENTICATION, PROFILE CUSTOMIZATION & AI ELO SYSTEM ---
+        // ============================================================================
+        // 👇 PASTE YOUR FIREBASE CONFIG RIGHT HERE 👇
+        // ============================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlzvG_eax3Rliy3-9a6YMMYCC56z3MRq4",
+            authDomain: "chess-wiz.firebaseapp.com",
+            projectId: "chess-wiz",
+            storageBucket: "chess-wiz.firebasestorage.app",
+            messagingSenderId: "1043305423838",
+            appId: "1:1043305423838:web:9229a74064d26609feb34f"
+        };
+
+        // Initialize Firebase Auth automatically
+        let firebaseAuth = null;
+        if (typeof firebase !== 'undefined' && firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("PASTE_YOUR")) {
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                firebaseAuth = firebase.auth();
+            } catch (err) {
+                console.error("Firebase init error:", err);
+            }
+        }
+
+        // --- AUTHENTICATION, PROFILE CUSTOMIZATION & AI ELO SYSTEM ---
         const PRESET_AVATARS = {
             crown: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="%233b0764"/><path d="M12 46h40M16 46l3-20 13 10 8-18 8 18 13-10 3 20" fill="%23fbbf24" stroke="%23fef08a" stroke-width="2"/></svg>',
             knight: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="%231e1b4b"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="%23c084fc">♞</text></svg>',
@@ -2471,7 +2478,6 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
 
             if (currentAuthUser) {
                 const shownName = currentDisplayName || currentAuthUser.split('@')[0];
-                // Show full name up to 30 characters; truncate with ellipsis if it exceeds 30
                 if (btnLabel) btnLabel.textContent = shownName.length > 30 ? shownName.slice(0, 29) + '…' : shownName;
 
                 if (currentAvatarUrl && avatarImg) {
@@ -2541,7 +2547,6 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             reader.onload = (ev) => {
                 const img = new Image();
                 img.onload = () => {
-                    // Resize to crisp 128x128 thumbnail so it saves cleanly in localStorage
                     const c = document.createElement('canvas');
                     c.width = 128; c.height = 128;
                     const ctx = c.getContext('2d');
@@ -2559,12 +2564,19 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             reader.readAsDataURL(file);
         };
 
-        window.saveUserProfile = function() {
+        window.saveUserProfile = async function() {
             const nameVal = document.getElementById('profile-name-input').value.trim();
             currentDisplayName = nameVal || (currentAuthUser ? currentAuthUser.split('@')[0] : 'Grandmaster');
             localStorage.setItem('chess_wiz_display_name', currentDisplayName);
             localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
             localStorage.setItem('chess_wiz_ai_elo', String(playerAiElo));
+
+            // Also update displayName on the real Firebase user profile if signed in
+            if (firebaseAuth && firebaseAuth.currentUser) {
+                try {
+                    await firebaseAuth.currentUser.updateProfile({ displayName: currentDisplayName });
+                } catch (e) {}
+            }
 
             updateAuthHeaderUI();
             closeAuthModal();
@@ -2572,11 +2584,15 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             showToast(`Profile Saved! Welcome, ${currentDisplayName} (${playerAiElo} ELO)`);
         };
 
-        function completeUserSignIn(email, sourceLabel) {
+        function completeUserSignIn(email, sourceLabel, providerPhotoUrl = null, providerName = null) {
             currentAuthUser = email;
             if (!localStorage.getItem('chess_wiz_display_name')) {
-                currentDisplayName = email.split('@')[0];
+                currentDisplayName = providerName || email.split('@')[0];
                 localStorage.setItem('chess_wiz_display_name', currentDisplayName);
+            }
+            if (providerPhotoUrl && !localStorage.getItem('chess_wiz_avatar')) {
+                currentAvatarUrl = providerPhotoUrl;
+                localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
             }
             if (!localStorage.getItem('chess_wiz_ai_elo')) {
                 playerAiElo = 1000;
@@ -2587,12 +2603,30 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             sound.playFanfare();
             showToast(`Signed in via ${sourceLabel}! Customize your profile below.`);
 
-            // Immediately transition the modal to the Profile Editor & ELO view (hiding sign-in options)
             const modal = document.getElementById('auth-modal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             showProfileEditorView();
             syncGameToCloud(true, chess.game_over());
+        }
+
+        // Keep session synced with Firebase Auth state
+        if (firebaseAuth) {
+            firebaseAuth.onAuthStateChanged((user) => {
+                if (user && user.email) {
+                    currentAuthUser = user.email;
+                    localStorage.setItem('chess_wiz_auth_user', user.email);
+                    if (user.displayName && !localStorage.getItem('chess_wiz_display_name')) {
+                        currentDisplayName = user.displayName;
+                        localStorage.setItem('chess_wiz_display_name', currentDisplayName);
+                    }
+                    if (user.photoURL && !localStorage.getItem('chess_wiz_avatar')) {
+                        currentAvatarUrl = user.photoURL;
+                        localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
+                    }
+                    updateAuthHeaderUI();
+                }
+            });
         }
 
         window.switchAuthMode = function(mode) {
@@ -2606,7 +2640,7 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
 
             if (mode === 'signup') {
                 titleEl.textContent = 'Create Cathedral Account';
-                subEl.textContent = 'Enter your email and create a password';
+                subEl.textContent = 'Enter your email and create a password (min 6 chars)';
                 confirmGroup.classList.remove('hidden');
                 document.getElementById('auth-confirm-input').required = true;
                 submitBtn.textContent = 'Create Account';
@@ -2624,7 +2658,8 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             sound.playSelect();
         };
 
-        window.handleEmailAuthSubmit = function(event) {
+        // Real Email & Password Sign-In / Sign-Up via Firebase
+        window.handleEmailAuthSubmit = async function(event) {
             event.preventDefault();
             const email = document.getElementById('auth-email-input').value.trim();
             const pass = document.getElementById('auth-pass-input').value;
@@ -2637,52 +2672,83 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                     return;
                 }
             }
-            completeUserSignIn(email, authMode === 'signup' ? 'New Account' : 'Email');
+
+            if (firebaseAuth) {
+                try {
+                    let cred;
+                    if (authMode === 'signup') {
+                        cred = await firebaseAuth.createUserWithEmailAndPassword(email, pass);
+                    } else {
+                        cred = await firebaseAuth.signInWithEmailAndPassword(email, pass);
+                    }
+                    completeUserSignIn(cred.user.email, authMode === 'signup' ? 'New Account' : 'Email', cred.user.photoURL, cred.user.displayName);
+                } catch (err) {
+                    sound.playCheck();
+                    showToast(err.message.replace('Firebase: ', ''));
+                }
+            } else {
+                showToast('Paste your firebaseConfig in the script first!');
+            }
         };
 
-        window.openAuthModal = function() {
-            const modal = document.getElementById('auth-modal');
-            const guestSec = document.getElementById('auth-guest-section');
-            const profileSec = document.getElementById('auth-profile-section');
+        // Real Google OAuth via Firebase (Fake Google popup 100% deleted!)
+        window.handleSocialSignIn = async function(provider) {
+            sound.playSelect();
 
-            if (currentAuthUser) {
-                showProfileEditorView();
-            } else {
-                guestSec.classList.remove('hidden');
-                profileSec.classList.add('hidden');
-                document.getElementById('modal-top-avatar').classList.add('hidden');
-                document.getElementById('modal-top-icon').classList.remove('hidden');
-                switchAuthMode('signin');
+            if (provider === 'Google') {
+                // Check 1: Did Ulaa Browser's ad/tracker shield block the Firebase script?
+                if (typeof firebase === 'undefined') {
+                    alert('Your browser (Ulaa Shield / Adblocker) blocked the Google Firebase script! Click the green shield icon in your address bar and turn it OFF for this site, then refresh.');
+                    return;
+                }
+                // Check 2: Initialize Firebase on the spot if it wasn't initialized yet
+                if (!firebaseAuth) {
+                    try {
+                        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                        firebaseAuth = firebase.auth();
+                    } catch (e) {
+                        alert('Firebase init error: ' + e.message);
+                        return;
+                    }
+                }
+                // Check 3: Make sure it's not opened as a local file://
+                if (window.location.protocol === 'file:') {
+                    alert('You are opening this file from your computer (file://). Please open your https://...vercel.app link to use Google Sign-In!');
+                    return;
+                }
+
+                // Launch REAL Google Sign-In
+                const authProvider = new firebase.auth.GoogleAuthProvider();
+                authProvider.setCustomParameters({ prompt: 'select_account' });
+                try {
+                    const result = await firebaseAuth.signInWithPopup(authProvider);
+                    const user = result.user;
+                    completeUserSignIn(user.email, 'Google', user.photoURL, user.displayName);
+                } catch (err) {
+                    // If Ulaa blocks the popup, automatically fall back to full-page Google redirect!
+                    if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+                        await firebaseAuth.signInWithRedirect(authProvider);
+                    } else {
+                        alert('Firebase Google Error: ' + err.message);
+                    }
+                }
+                return;
             }
 
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            sound.playSelect();
-        };
-
-        window.closeAuthModal = function() {
-            const modal = document.getElementById('auth-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        };
-
-        window.handleSocialSignIn = function(provider) {
-            sound.playSelect();
-            const width = 460, height = 560;
-            const left = Math.round((window.screen.width - width) / 2);
-            const top = Math.round((window.screen.height - height) / 2);
-
-            const popup = window.open('about:blank', `${provider}SignInPopup`, `width=${width},height=${height},left=${left},top=${top}`);
-            if (!popup) { showToast('Please allow popups to sign in!'); return; }
-
+            // Built-in popup ONLY for Microsoft & Apple (Google is completely removed from here!)
             const brand = {
-                Google: { title: 'Sign in with Google', accent: '#1a73e8', domain: 'gmail.com' },
                 Microsoft: { title: 'Sign in to Microsoft', accent: '#0067b8', domain: 'outlook.com' },
                 Apple: { title: 'Sign in with Apple ID', accent: '#0071e3', domain: 'icloud.com' }
             }[provider];
+            if (!brand) return;
+
+            const width = 460, height = 560;
+            const left = Math.round((window.screen.width - width) / 2);
+            const top = Math.round((window.screen.height - height) / 2);
+            const popup = window.open('about:blank', `${provider}SignInPopup`, `width=${width},height=${height},left=${left},top=${top}`);
+            if (!popup) { showToast('Please allow popups to sign in!'); return; }
 
             const savedEmail = localStorage.getItem(`chess_wiz_last_${provider.toLowerCase()}`) || `sidharth@${brand.domain}`;
-
             popup.document.write(`
                 <!DOCTYPE html><html><head><title>${brand.title}</title>
                 <style>
@@ -2723,7 +2789,36 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             }
         });
 
-        window.handleSignOut = function() {
+        window.openAuthModal = function() {
+            const modal = document.getElementById('auth-modal');
+            const guestSec = document.getElementById('auth-guest-section');
+            const profileSec = document.getElementById('auth-profile-section');
+
+            if (currentAuthUser) {
+                showProfileEditorView();
+            } else {
+                guestSec.classList.remove('hidden');
+                profileSec.classList.add('hidden');
+                document.getElementById('modal-top-avatar').classList.add('hidden');
+                document.getElementById('modal-top-icon').classList.remove('hidden');
+                switchAuthMode('signin');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            sound.playSelect();
+        };
+
+        window.closeAuthModal = function() {
+            const modal = document.getElementById('auth-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.handleSignOut = async function() {
+            if (firebaseAuth) {
+                try { await firebaseAuth.signOut(); } catch (e) {}
+            }
             currentAuthUser = null;
             localStorage.removeItem('chess_wiz_auth_user');
             updateAuthHeaderUI();
@@ -2805,7 +2900,7 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 </div>
 
                 <div class="space-y-2 flex flex-col items-center">
-                    <button type="button" onclick="handleSocialSignIn('Google')" class="w-[210px] md3-btn !h-8 !justify-start !px-3 !bg-white/10 hover:!bg-white/15 border border-white/15 text-xs font-semibold text-white gap-2">
+                    <button type="button" onclick="handleGoogleFirebaseSignIn()" class="w-[210px] md3-btn !h-8 !justify-start !px-3 !bg-white/10 hover:!bg-white/15 border border-white/15 text-xs font-semibold text-white gap-2">
                         <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.1 8.9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.7s.2-2 .4-2.7L1.6 6.4C.6 8.4 0 10.6 0 13s.6 4.6 1.6 6.6l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5.3L1.6 15.6C3.5 19.4 7.4 23 12 23z"/></svg>
                         <span>Sign in with Google</span>
                     </button>
