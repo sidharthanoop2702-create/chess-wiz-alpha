@@ -2691,55 +2691,36 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             }
         };
 
-        // Real Google OAuth via Firebase (Fake Google popup 100% deleted!)
-        window.handleSocialSignIn = async function(provider) {
-            console.log("-> 1. Button clicked for:", provider);
+        // 1. DEDICATED REAL FIREBASE GOOGLE AUTH (Uses actual Firebase popup)
+        window.handleGoogleFirebaseSignIn = async function() {
             sound.playSelect();
+            console.log("Real Google Firebase Auth triggered");
 
-            if (provider === 'Google') {
-                console.log("-> 2. Processing Google Sign-In...");
-                
-                if (typeof firebase === 'undefined') {
-                    console.error("Firebase SDK is undefined! Blocked by adblocker/browser shield.");
-                    alert('Error: Firebase SDK was blocked by your browser shield (Ulaa/Adblocker). Please disable it for this site and refresh.');
-                    return;
-                }
-
-                if (!firebaseAuth) {
-                    console.log("-> 3. Initializing Firebase Auth on the fly...");
-                    try {
-                        if (!firebase.apps.length) {
-                            firebase.initializeApp(firebaseConfig);
-                        }
-                        firebaseAuth = firebase.auth();
-                    } catch (e) {
-                        console.error("Firebase init failed:", e);
-                        alert('Firebase initialization error: ' + e.message);
-                        return;
-                    }
-                }
-
-                if (window.location.protocol === 'file:') {
-                    alert('Google Sign-In will not open popups from a local file:// URL. Please test on http://localhost or your Vercel link.');
-                    return;
-                }
-
-                console.log("-> 4. Opening Google Popup...");
-                try {
-                    const authProvider = new firebase.auth.GoogleAuthProvider();
-                    authProvider.setCustomParameters({ prompt: 'select_account' });
-                    const result = await firebaseAuth.signInWithPopup(authProvider);
-                    console.log("-> 5. Google Sign-In Success:", result.user.email);
-                    completeUserSignIn(result.user.email, 'Google', result.user.photoURL, result.user.displayName);
-                } catch (err) {
-                    console.error("-> Google Popup Error:", err);
-                    alert('Google Sign-In Error: ' + err.message);
-                }
+            if (typeof firebase === 'undefined' || !firebaseAuth) {
+                alert('Firebase is not initialized. Please check your internet connection or Firebase SDK scripts.');
+                return;
+            }
+            if (window.location.protocol === 'file:') {
+                alert('Real Google Sign-In popups require http://localhost or your Vercel deployment link!');
                 return;
             }
 
-            // Microsoft & Apple Simulation Popup
-            console.log("-> Opening simulation popup for:", provider);
+            try {
+                const authProvider = new firebase.auth.GoogleAuthProvider();
+                authProvider.setCustomParameters({ prompt: 'select_account' });
+                const result = await firebaseAuth.signInWithPopup(authProvider);
+                const user = result.user;
+                completeUserSignIn(user.email, 'Google', user.photoURL, user.displayName);
+            } catch (err) {
+                console.error("Google Auth Popup Error:", err);
+                alert('Google Sign-In Error: ' + err.message);
+            }
+        };
+
+        // 2. SIMULATED POPUP ONLY FOR MICROSOFT & APPLE (Google is completely removed from here!)
+        window.handleSocialSignIn = async function(provider) {
+            sound.playSelect();
+
             const brand = {
                 Microsoft: { title: 'Sign in to Microsoft', accent: '#0067b8', domain: 'outlook.com' },
                 Apple: { title: 'Sign in with Apple ID', accent: '#0071e3', domain: 'icloud.com' }
@@ -2792,7 +2773,6 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 completeUserSignIn(email, provider);
             }
         });
-
         window.openAuthModal = function() {
             const modal = document.getElementById('auth-modal');
             const guestSec = document.getElementById('auth-guest-section');
