@@ -2476,7 +2476,9 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
 
         let currentAuthUser = localStorage.getItem('chess_wiz_auth_user') || null;
         let currentDisplayName = localStorage.getItem('chess_wiz_display_name') || '';
-        let currentAvatarUrl = localStorage.getItem('chess_wiz_avatar') || PRESET_AVATARS.crown;
+        let currentAvatarUrl = localStorage.getItem('chess_wiz_avatar') !== null
+            ? localStorage.getItem('chess_wiz_avatar')
+            : PRESET_AVATARS.crown;
         let playerAiElo = parseInt(localStorage.getItem('chess_wiz_ai_elo') || '1000', 10);
         let authMode = 'signin';
 
@@ -2529,23 +2531,68 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             const defaultName = currentDisplayName || currentAuthUser.split('@')[0];
             document.getElementById('profile-name-input').value = defaultName;
 
+            syncAvatarModalUI();
+        }
+        
+        function syncAvatarModalUI() {
             const preview = document.getElementById('profile-avatar-preview');
-            preview.src = currentAvatarUrl || PRESET_AVATARS.crown;
+            const emptyIcon = document.getElementById('profile-avatar-empty');
+            const hoverIcon = document.getElementById('avatar-hover-icon');
+            const hoverText = document.getElementById('avatar-hover-text');
+            const topAvatar = document.getElementById('modal-top-avatar');
+            const topIcon = document.getElementById('modal-top-icon');
 
             if (currentAvatarUrl) {
-                topAvatar.src = currentAvatarUrl;
-                topAvatar.classList.remove('hidden');
-                topIcon.classList.add('hidden');
+                preview.src = currentAvatarUrl;
+                preview.classList.remove('hidden');
+                emptyIcon?.classList.add('hidden');
+
+                if (hoverIcon) {
+                    hoverIcon.textContent = 'delete';
+                    hoverIcon.className = 'material-symbols-rounded !text-lg text-rose-400';
+                }
+                if (hoverText) hoverText.textContent = 'Remove';
+
+                if (topAvatar) {
+                    topAvatar.src = currentAvatarUrl;
+                    topAvatar.classList.remove('hidden');
+                }
+                topIcon?.classList.add('hidden');
+            } else {
+                preview.src = '';
+                preview.classList.add('hidden');
+                emptyIcon?.classList.remove('hidden');
+
+                if (hoverIcon) {
+                    hoverIcon.textContent = 'add_a_photo';
+                    hoverIcon.className = 'material-symbols-rounded !text-lg text-emerald-300';
+                }
+                if (hoverText) hoverText.textContent = 'Add Pic';
+
+                topAvatar?.classList.add('hidden');
+                topIcon?.classList.remove('hidden');
             }
         }
+
+        window.handleAvatarOverlayClick = function() {
+            sound.playSelect();
+            if (currentAvatarUrl) {
+                // Remove current profile picture
+                currentAvatarUrl = '';
+                localStorage.setItem('chess_wiz_avatar', '');
+                syncAvatarModalUI();
+                updateAuthHeaderUI();
+                showToast('Profile picture removed.');
+            } else {
+                // Prompt user to upload a new profile picture
+                document.getElementById('profile-avatar-file').click();
+            }
+        };
 
         window.selectPresetAvatar = function(key) {
             if (PRESET_AVATARS[key]) {
                 currentAvatarUrl = PRESET_AVATARS[key];
-                document.getElementById('profile-avatar-preview').src = currentAvatarUrl;
-                document.getElementById('modal-top-avatar').src = currentAvatarUrl;
-                document.getElementById('modal-top-avatar').classList.remove('hidden');
-                document.getElementById('modal-top-icon').classList.add('hidden');
+                syncAvatarModalUI();
                 sound.playSelect();
             }
         };
@@ -2564,9 +2611,7 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                     ctx.drawImage(img, (img.width - minDim) / 2, (img.height - minDim) / 2, minDim, minDim, 0, 0, 128, 128);
                     currentAvatarUrl = c.toDataURL('image/jpeg', 0.85);
                     document.getElementById('profile-avatar-preview').src = currentAvatarUrl;
-                    document.getElementById('modal-top-avatar').src = currentAvatarUrl;
-                    document.getElementById('modal-top-avatar').classList.remove('hidden');
-                    document.getElementById('modal-top-icon').classList.add('hidden');
+                    syncAvatarModalUI();
                     sound.playSelect();
                 };
                 img.src = ev.target.result;
@@ -2930,7 +2975,21 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 <div>
                     <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5">Profile Picture</label>
                     <div class="flex items-center gap-3">
-                        <img id="profile-avatar-preview" src="" alt="Preview" class="w-12 h-12 rounded-2xl object-cover border-2 border-amber-400/50 bg-black/40 shrink-0" />
+                        <div class="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-amber-400/50 bg-black/40 shrink-0 group cursor-pointer" onclick="handleAvatarOverlayClick()">
+                        <!-- Avatar Image (Shown when a picture exists) -->
+                        <img id="profile-avatar-preview" src="" alt="Preview" class="w-full h-full object-cover" />
+    
+                        <!-- Default Placeholder Icon (Shown when no picture is set) -->
+                        <div id="profile-avatar-empty" class="w-full h-full flex items-center justify-center text-purple-200/50 hidden">
+                        <span class="material-symbols-rounded !text-3xl">person</span>
+                        </div>
+
+                        <!-- Hover Overlay (Switches between Remove & Add automatically) -->
+                        <div class="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-1 text-center">
+                            <span id="avatar-hover-icon" class="material-symbols-rounded !text-lg text-rose-400">delete</span>
+                            <span id="avatar-hover-text" class="text-[9px] font-bold uppercase tracking-wider text-white leading-tight mt-0.5">Remove</span>
+                        </div>
+                    </div>
                         <div class="flex-1 space-y-1.5">
                             <button type="button" onclick="document.getElementById('profile-avatar-file').click()" class="w-full md3-btn md3-btn-tonal !h-8 !text-xs">
                                 <span class="material-symbols-rounded !text-sm">upload</span>
