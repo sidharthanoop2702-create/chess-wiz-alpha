@@ -484,31 +484,35 @@
         </div>
     </header>
 
-    <!-- Enlarged Prominent Puzzle HUD Bar (Positioned on the Left Side) -->
-    <div id="puzzle-banner" class="fixed top-24 left-6 z-20 w-80 sm:w-96 hidden pointer-events-none">
-        <div class="md3-surface rounded-2xl p-4 border border-emerald-400/50 shadow-2xl flex flex-col gap-2.5 pointer-events-auto bg-black/85 backdrop-blur-md text-left">
-            <div class="flex items-center justify-between">
-                <span id="puzzle-badge-num" class="text-xs font-bold uppercase px-2.5 py-1 rounded-full bg-emerald-500/30 text-emerald-200">Archmage 1/3</span>
-                <span class="text-[11px] text-amber-300 font-semibold">3 Hints • 3 Undos</span>
+    <!-- Enlarged Vertical Puzzle Objective HUD (Fixed on Left Side) -->
+    <div id="puzzle-banner" class="fixed top-28 left-6 z-20 w-80 sm:w-96 hidden pointer-events-none">
+        <div class="md3-surface rounded-2xl p-5 border border-emerald-400/50 shadow-2xl flex flex-col gap-3.5 pointer-events-auto bg-black/85 backdrop-blur-md text-left">
+            <div class="flex items-center justify-between pb-2 border-b border-white/10">
+                <span id="puzzle-badge-num" class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-emerald-500/30 text-emerald-200">Archmage 1/3</span>
+                <span class="text-xs text-amber-300 font-semibold flex items-center gap-1">
+                    <span class="material-symbols-rounded !text-sm">bolt</span> 3 Hints • 3 Undos
+                </span>
             </div>
-            <div>
-                <div id="puzzle-title" class="font-gothic font-bold text-sm sm:text-base text-white">Opera House Finale</div>
-                <div id="puzzle-objective" class="text-xs sm:text-sm text-emerald-200/95 font-medium mt-1 leading-relaxed">White to Move — Mate in 2</div>
+            <div class="space-y-1.5">
+                <div id="puzzle-title" class="font-gothic font-bold text-base sm:text-lg text-white tracking-wide">Opera House Finale</div>
+                <div id="puzzle-objective" class="text-xs sm:text-sm text-emerald-200/95 font-medium leading-relaxed bg-emerald-950/30 p-2.5 rounded-xl border border-emerald-500/20">White to Move — Mate in 2</div>
             </div>
-            <div class="grid grid-cols-4 gap-1.5 pt-1 border-t border-white/10">
-                <button type="button" onclick="triggerOracleHint()" id="puzzle-banner-hint-btn" class="md3-btn !h-8 !px-2 !text-xs border border-amber-400/35 text-amber-200">
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+                <button type="button" onclick="triggerOracleHint()" id="puzzle-banner-hint-btn" class="md3-btn !h-9 !px-3 !text-xs border border-amber-400/35 text-amber-200 justify-center">
                     <span class="material-symbols-rounded !text-sm text-amber-300">lightbulb</span>
-                    <span id="puzzle-banner-hint-label">3/3</span>
+                    <span id="puzzle-banner-hint-label">Hint (3/3)</span>
                 </button>
-                <button type="button" onclick="document.getElementById('btn-undo').click()" id="puzzle-banner-undo-btn" class="md3-btn !h-8 !px-2 !text-xs border border-purple-300/35 text-purple-200">
+                <button type="button" onclick="document.getElementById('btn-undo').click()" id="puzzle-banner-undo-btn" class="md3-btn !h-9 !px-3 !text-xs border border-purple-300/35 text-purple-200 justify-center">
                     <span class="material-symbols-rounded !text-sm">undo</span>
-                    <span id="puzzle-banner-undo-label">3/3</span>
+                    <span id="puzzle-banner-undo-label">Undo (3/3)</span>
                 </button>
-                <button type="button" onclick="retryCurrentPuzzle()" class="md3-btn md3-btn-tonal !h-8 !px-2 !text-xs text-amber-200" title="Retry">
+                <button type="button" onclick="retryCurrentPuzzle()" class="md3-btn md3-btn-tonal !h-9 !px-3 !text-xs text-amber-200 justify-center">
                     <span class="material-symbols-rounded !text-sm">refresh</span>
+                    <span>Retry Trial</span>
                 </button>
-                <button type="button" onclick="nextPuzzle()" class="md3-btn md3-btn-primary !h-8 !px-2 !text-xs" title="Next Puzzle">
-                    <span>Next</span>
+                <button type="button" onclick="nextPuzzle()" class="md3-btn md3-btn-primary !h-9 !px-3 !text-xs justify-center">
+                    <span>Next Puzzle</span>
+                    <span class="material-symbols-rounded !text-sm">chevron_right</span>
                 </button>
             </div>
         </div>
