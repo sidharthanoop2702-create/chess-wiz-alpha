@@ -1747,6 +1747,8 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
         window.applyBoardSquareTheme = function(k, saveToAccount = false) {
             const t = BOARD_THEMES[k];
             if (!t) return;
+
+            // 1. Recolor the 64 chessboard squares
             for (const sq in squareMeshes) {
                 squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
             }
@@ -1754,25 +1756,53 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k);
             });
 
-            // Change 3D sky, fog, HTML body, AND the 3D Cathedral floor/pillars to match the board!
+            // 2. Recolor the Table directly underneath the 64 squares (boardFrameMesh & boardTrimMesh)
+            if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.floorHex);
+            if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.dark);
+
+            // 3. Recolor the Four Corner Triangles around the Altar Frame (d1 & d2 octagonal pedestals) + Floor
+            scene.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
+                    const rTop = obj.geometry.parameters?.radiusTop;
+                    // d1 (8.8) & d2 (7.2) form the 4 angled triangles sticking out around the altar frame
+                    if (rTop === 8.8 || rTop === 7.2) {
+                        obj.material.color.setHex(t.dark);
+                    } else if (rTop === 36 || rTop === 0.75) {
+                        // Main sanctuary floor and pillars
+                        obj.material.color.setHex(t.floorHex);
+                    }
+                }
+            });
+
+            // 4. Recolor sky, fog, and HTML background
             scene.background.setHex(t.bgHex);
             if (scene.fog) scene.fog.color.setHex(t.bgHex);
-            if (typeof cathedralDarkMat !== 'undefined') cathedralDarkMat.color.setHex(t.floorHex);
-            if (typeof cathedralCarvedMat !== 'undefined') cathedralCarvedMat.color.setHex(t.daisHex);
             document.body.style.backgroundColor = t.cssBg;
 
             if (saveToAccount) {
                 localStorage.setItem(getUserThemeKey('board_theme'), k);
                 sound.playSelect();
-                showToast(`Board & Sanctuary Theme Saved: ${t.name}`);
+                showToast(`Board & Altar Table Saved: ${t.name}`);
             }
         };
 
         window.applyBoardFrameTheme = function(k, saveToAccount = false) {
             const t = FRAME_THEMES[k];
             if (!t) return;
+
+            // Recolor the outer frame and the table surface under the squares
             if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.frame);
             if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.trim);
+
+            // Also recolor the 4 corner triangles around the altar frame (d1 & d2)
+            scene.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
+                    const rTop = obj.geometry.parameters?.radiusTop;
+                    if (rTop === 8.8) obj.material.color.setHex(t.frame);
+                    if (rTop === 7.2) obj.material.color.setHex(t.trim);
+                }
+            });
+
             ['bronze', 'gold', 'iron'].forEach(id => {
                 document.getElementById(`theme-frame-${id}`)?.classList.toggle('active', id === k);
             });
@@ -1780,7 +1810,7 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             if (saveToAccount) {
                 localStorage.setItem(getUserThemeKey('frame_theme'), k);
                 sound.playSelect();
-                showToast(`Altar Frame Saved: ${t.name}`);
+                showToast(`Altar Frame & Pedestal Saved: ${t.name}`);
             }
         };
 
