@@ -338,19 +338,19 @@
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">2. Cathedral Board Square Theme</label>
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" id="theme-board-classic" onclick="applyBoardSquareTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background: linear-gradient(135deg, #f5f2eb 50%, #3b3355 50%);"></span>
+                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#f5f2eb] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#3b3355] rounded-sm border border-black/20"></span></span>
                             <span>Gothic Alabaster</span>
                         </button>
                         <button type="button" id="theme-board-emerald" onclick="applyBoardSquareTheme('emerald', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background: linear-gradient(135deg, #d8f3dc 50%, #134e4a 50%);"></span>
+                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#d8f3dc] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#134e4a] rounded-sm border border-black/20"></span></span>
                             <span>Emerald Sanctum</span>
                         </button>
                         <button type="button" id="theme-board-crimson" onclick="applyBoardSquareTheme('crimson', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background: linear-gradient(135deg, #f9eae1 50%, #6b1426 50%);"></span>
+                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#f9eae1] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#6b1426] rounded-sm border border-black/20"></span></span>
                             <span>Royal Crimson</span>
                         </button>
                         <button type="button" id="theme-board-sapphire" onclick="applyBoardSquareTheme('sapphire', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background: linear-gradient(135deg, #e0f2fe 50%, #1e3a8a 50%);"></span>
+                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#e0f2fe] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#1e3a8a] rounded-sm border border-black/20"></span></span>
                             <span>Arcane Sapphire</span>
                         </button>
                     </div>
@@ -359,9 +359,18 @@
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">3. Sanctuary Altar Frame</label>
                     <div class="grid grid-cols-3 gap-2">
-                        <button type="button" id="theme-frame-bronze" onclick="applyBoardFrameTheme('bronze')" class="menu-option-card active rounded-xl p-2 text-xs font-semibold text-white">Cathedral Bronze</button>
-                        <button type="button" id="theme-frame-gold" onclick="applyBoardFrameTheme('gold')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Royal Gold</button>
-                        <button type="button" id="theme-frame-iron" onclick="applyBoardFrameTheme('iron')" class="menu-option-card rounded-xl p-2 text-xs font-semibold text-white">Obsidian Iron</button>
+                        <button type="button" id="theme-frame-bronze" onclick="applyBoardFrameTheme('bronze', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#262135] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#9370db] rounded-sm border border-black/20"></span></span>
+                            <span>Bronze</span>
+                        </button>
+                        <button type="button" id="theme-frame-gold" onclick="applyBoardFrameTheme('gold', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#42331b] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#fbbf24] rounded-sm border border-black/20"></span></span>
+                            <span>Gold</span>
+                        </button>
+                        <button type="button" id="theme-frame-iron" onclick="applyBoardFrameTheme('iron', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#121216] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#52525b] rounded-sm border border-black/20"></span></span>
+                            <span>Iron</span>
+                        </button>
                     </div>
                 </div>
 
@@ -369,19 +378,19 @@
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">4. Sculpted Piece Vessels &amp; Runes</label>
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" id="theme-piece-classic" onclick="applyPieceTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background: linear-gradient(135deg, #f7f4ef 50%, #161224 50%);"></span>
+                            <span class="theme-swatch" style="background-image: linear-gradient(135deg, #f7f4ef 50%, #161224 50%);"></span>
                             <span>Marble vs Obsidian</span>
                         </button>
                         <button type="button" id="theme-piece-royal" onclick="applyPieceTheme('royal', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background: linear-gradient(135deg, #fef3c7 50%, #1c1917 50%);"></span>
+                            <span class="theme-swatch" style="background-image: linear-gradient(135deg, #fef3c7 50%, #1c1917 50%);"></span>
                             <span>Ivory Gold vs Ebony</span>
                         </button>
                         <button type="button" id="theme-piece-jade" onclick="applyPieceTheme('jade', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background: linear-gradient(135deg, #a7f3d0 50%, #4c0519 50%);"></span>
+                            <span class="theme-swatch" style="background-image: linear-gradient(135deg, #a7f3d0 50%, #4c0519 50%);"></span>
                             <span>Celestial Jade vs Ruby</span>
                         </button>
                         <button type="button" id="theme-piece-frost" onclick="applyPieceTheme('frost', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background: linear-gradient(135deg, #e0f2fe 50%, #2e1065 50%);"></span>
+                            <span class="theme-swatch" style="background-image: linear-gradient(135deg, #e0f2fe 50%, #2e1065 50%);"></span>
                             <span>Frost vs Nether</span>
                         </button>
                     </div>
@@ -1691,9 +1700,9 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             for (const sq in squareMeshes) squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
             ['classic', 'emerald', 'crimson', 'sapphire'].forEach(id => document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k));
             
-            // Dynamic Background & Fog Color Change matching the board theme
+            // Instantly update 3D background color and fog density
             scene.background.setHex(t.bgHex);
-            scene.fog.color.setHex(t.bgHex);
+            if (scene.fog) scene.fog.color.setHex(t.bgHex);
 
             if (saveToAccount) {
                 localStorage.setItem(getUserThemeKey('board_theme'), k);
@@ -1704,17 +1713,16 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             sound.playSelect();
         };
 
-        window.applyPieceTheme = function(k, saveToAccount = false) {
-            const t = PIECE_THEMES[k]; if (!t) return;
-            whitePieceMaterial.color.setHex(t.wC); whiteRuneMat.color.setHex(t.wR);
-            blackPieceMaterial.color.setHex(t.bC); blackRuneMat.color.setHex(t.bR);
-            ['classic', 'royal', 'jade', 'frost'].forEach(id => document.getElementById(`theme-piece-${id}`)?.classList.toggle('active', id === k));
+        window.applyBoardFrameTheme = function(k, saveToAccount = false) {
+            const t = FRAME_THEMES[k]; if (!t) return;
+            boardFrameMesh.material.color.setHex(t.frame); boardTrimMesh.material.color.setHex(t.trim);
+            ['bronze', 'gold', 'iron'].forEach(id => document.getElementById(`theme-frame-${id}`)?.classList.toggle('active', id === k));
             
             if (saveToAccount) {
-                localStorage.setItem(getUserThemeKey('piece_theme'), k);
-                showToast(`Piece Theme Saved for ${currentAuthUser || 'Guest'}: ${t.name}`);
+                localStorage.setItem(getUserThemeKey('frame_theme'), k);
+                showToast(`Altar Frame Saved for ${currentAuthUser || 'Guest'}: ${t.name}`);
             } else {
-                showToast(`Pieces: ${t.name}`);
+                showToast(`Altar Frame: ${t.name}`);
             }
             sound.playSelect();
         };
@@ -1723,8 +1731,10 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
         function loadAccountThemePreferences() {
             const savedBoard = localStorage.getItem(getUserThemeKey('board_theme')) || 'classic';
             const savedPieces = localStorage.getItem(getUserThemeKey('piece_theme')) || 'classic';
+            const savedFrame = localStorage.getItem(getUserThemeKey('frame_theme')) || 'bronze';
             applyBoardSquareTheme(savedBoard, false);
             applyPieceTheme(savedPieces, false);
+            applyBoardFrameTheme(savedFrame, false);
         }
 
         /* 8. WIZARD AI */
@@ -2968,14 +2978,15 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             popup.document.write(`
                 <!DOCTYPE html><html><head><title>${brand.title}</title>
                 <style>
-                    /* Diagonal split-color swatch for theme buttons */
+                    /* Diagonal split-color swatch for piece themes */
                     .theme-swatch {
-                        width: 16px;
-                        height: 16px;
+                        width: 18px;
+                        height: 18px;
                         border-radius: 4px;
                         display: inline-block;
-                        border: 1px solid rgba(255,255,255,0.25);
+                        border: 1px solid rgba(255,255,255,0.3);
                         flex-shrink: 0;
+                        background-size: 100% 100%;
                     }
 
                     body { font-family: sans-serif; padding: 28px; display: flex; align-items: center; justify-content: center; min-height: 85vh; margin: 0; }
