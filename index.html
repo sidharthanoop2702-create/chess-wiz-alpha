@@ -320,8 +320,8 @@
             </div>
 
             <!-- 4. CUSTOMIZE BOARD & PIECES VIEW -->
-            <div id="start-menu-customize-view" class="hidden space-y-3">
-                <!-- Show / Hide Squares (Shown by Default) -->
+            <div id="start-menu-customize-view" class="hidden space-y-3 relative z-10 pointer-events-auto">
+                <!-- 1. Show / Hide Squares -->
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">1. Board Squares Visibility (Default: Shown)</label>
                     <div class="grid grid-cols-2 gap-2">
@@ -334,75 +334,99 @@
                     </div>
                 </div>
 
+                <!-- 2. Cathedral Board Square Theme (Diagonal Swatches) -->
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">2. Cathedral Board Square Theme</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="theme-board-classic" onclick="applyBoardSquareTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#f5f2eb] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#3b3355] rounded-sm border border-black/20"></span></span>
+                        <button type="button" id="theme-board-classic" onclick="window.applyBoardSquareTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
+                                <polygon points="0,0 16,0 0,16" fill="#f5f2eb"/>
+                                <polygon points="16,0 16,16 0,16" fill="#3b3355"/>
+                            </svg>
                             <span>Gothic Alabaster</span>
                         </button>
-                        <button type="button" id="theme-board-emerald" onclick="applyBoardSquareTheme('emerald', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#d8f3dc] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#134e4a] rounded-sm border border-black/20"></span></span>
+                        <button type="button" id="theme-board-emerald" onclick="window.applyBoardSquareTheme('emerald', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
+                                <polygon points="0,0 16,0 0,16" fill="#d8f3dc"/>
+                                <polygon points="16,0 16,16 0,16" fill="#134e4a"/>
+                            </svg>
                             <span>Emerald Sanctum</span>
                         </button>
-                        <button type="button" id="theme-board-crimson" onclick="applyBoardSquareTheme('crimson', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#f9eae1] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#6b1426] rounded-sm border border-black/20"></span></span>
+                        <button type="button" id="theme-board-crimson" onclick="window.applyBoardSquareTheme('crimson', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
+                                <polygon points="0,0 16,0 0,16" fill="#f9eae1"/>
+                                <polygon points="16,0 16,16 0,16" fill="#6b1426"/>
+                            </svg>
                             <span>Royal Crimson</span>
                         </button>
-                        <button type="button" id="theme-board-sapphire" onclick="applyBoardSquareTheme('sapphire', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#e0f2fe] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#1e3a8a] rounded-sm border border-black/20"></span></span>
+                        <button type="button" id="theme-board-sapphire" onclick="window.applyBoardSquareTheme('sapphire', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
+                                <polygon points="0,0 16,0 0,16" fill="#e0f2fe"/>
+                                <polygon points="16,0 16,16 0,16" fill="#1e3a8a"/>
+                            </svg>
                             <span>Arcane Sapphire</span>
                         </button>
                     </div>
                 </div>
 
+                <!-- 3. Sanctuary Altar Frame (Solid Swatches) -->
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">3. Sanctuary Altar Frame</label>
                     <div class="grid grid-cols-3 gap-2">
-                        <button type="button" id="theme-frame-bronze" onclick="applyBoardFrameTheme('bronze', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#262135] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#9370db] rounded-sm border border-black/20"></span></span>
-                            <span>Bronze</span>
+                        <button type="button" id="theme-frame-bronze" onclick="window.applyBoardFrameTheme('bronze', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
+                                <rect x="0" y="0" width="16" height="16" fill="#262135"/>
+                                <rect x="3" y="3" width="10" height="10" rx="1.5" fill="none" stroke="#9370db" stroke-width="2.5"/>
+                            </svg>
+                            <span>Cathedral Bronze</span>
                         </button>
-                        <button type="button" id="theme-frame-gold" onclick="applyBoardFrameTheme('gold', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#42331b] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#fbbf24] rounded-sm border border-black/20"></span></span>
-                            <span>Gold</span>
+                        <button type="button" id="theme-frame-gold" onclick="window.applyBoardFrameTheme('gold', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
+                                <rect x="0" y="0" width="16" height="16" fill="#42331b"/>
+                                <rect x="3" y="3" width="10" height="10" rx="1.5" fill="none" stroke="#fbbf24" stroke-width="2.5"/>
+                            </svg>
+                            <span>Royal Gold</span>
                         </button>
-                        <button type="button" id="theme-frame-iron" onclick="applyBoardFrameTheme('iron', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="flex gap-0.5 shrink-0"><span class="w-2.5 h-4 bg-[#121216] rounded-sm border border-black/20"></span><span class="w-2.5 h-4 bg-[#52525b] rounded-sm border border-black/20"></span></span>
-                            <span>Iron</span>
+                        <button type="button" id="theme-frame-iron" onclick="window.applyBoardFrameTheme('iron', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
+                                <rect x="0" y="0" width="16" height="16" fill="#121216"/>
+                                <rect x="3" y="3" width="10" height="10" rx="1.5" fill="none" stroke="#a1a1aa" stroke-width="2.5"/>
+                            </svg>
+                            <span>Obsidian Iron</span>
                         </button>
                     </div>
                 </div>
 
+                <!-- 4. Sculpted Piece Vessels & Runes (Diagonal Swatches) -->
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">4. Sculpted Piece Vessels &amp; Runes</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="theme-piece-classic" onclick="applyPieceTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
-                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30" viewBox="0 0 16 16">
+                        <button type="button" id="theme-piece-classic" onclick="window.applyPieceTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
                                 <polygon points="0,0 16,0 0,16" fill="#f7f4ef"/>
                                 <polygon points="16,0 16,16 0,16" fill="#161224"/>
                                 <line x1="0" y1="16" x2="16" y2="0" stroke="#fbbf24" stroke-width="1.5"/>
                             </svg>
                             <span>Marble vs Obsidian</span>
                         </button>
-                        <button type="button" id="theme-piece-royal" onclick="applyPieceTheme('royal', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
-                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30" viewBox="0 0 16 16">
+                        <button type="button" id="theme-piece-royal" onclick="window.applyPieceTheme('royal', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
                                 <polygon points="0,0 16,0 0,16" fill="#fef3c7"/>
                                 <polygon points="16,0 16,16 0,16" fill="#1c1917"/>
                                 <line x1="0" y1="16" x2="16" y2="0" stroke="#f59e0b" stroke-width="1.5"/>
                             </svg>
                             <span>Ivory Gold vs Ebony</span>
                         </button>
-                        <button type="button" id="theme-piece-jade" onclick="applyPieceTheme('jade', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
-                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30" viewBox="0 0 16 16">
+                        <button type="button" id="theme-piece-jade" onclick="window.applyPieceTheme('jade', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
                                 <polygon points="0,0 16,0 0,16" fill="#a7f3d0"/>
                                 <polygon points="16,0 16,16 0,16" fill="#4c0519"/>
                                 <line x1="0" y1="16" x2="16" y2="0" stroke="#10b981" stroke-width="1.5"/>
                             </svg>
                             <span>Celestial Jade vs Ruby</span>
                         </button>
-                        <button type="button" id="theme-piece-frost" onclick="applyPieceTheme('frost', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
-                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30" viewBox="0 0 16 16">
+                        <button type="button" id="theme-piece-frost" onclick="window.applyPieceTheme('frost', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
                                 <polygon points="0,0 16,0 0,16" fill="#e0f2fe"/>
                                 <polygon points="16,0 16,16 0,16" fill="#2e1065"/>
                                 <line x1="0" y1="16" x2="16" y2="0" stroke="#38bdf8" stroke-width="1.5"/>
@@ -411,6 +435,7 @@
                         </button>
                     </div>
                 </div>
+            </div>
 
             <!-- 5. START MENU ANALYSE VIEW (Previous Cloud Game or File Explorer Import) -->
             <div id="start-menu-analyse-view" class="hidden space-y-3">
@@ -841,10 +866,12 @@
         const coolRimLight = new THREE.PointLight(0x8b5cf6, 1.6, 38); coolRimLight.position.set(13, 10, -13); scene.add(coolRimLight);
 
         const torchFlames = [];
+        const cathedralDarkMat = new THREE.MeshStandardMaterial({ color: 0x1a1724, roughness: 0.85, metalness: 0.15 });
+        const cathedralCarvedMat = new THREE.MeshStandardMaterial({ color: 0x252134, roughness: 0.7, metalness: 0.2 });
         (function buildGothicCathedral() {
             const grp = new THREE.Group();
-            const darkMat = new THREE.MeshStandardMaterial({ color: 0x1a1724, roughness: 0.85, metalness: 0.15 });
-            const carvedMat = new THREE.MeshStandardMaterial({ color: 0x252134, roughness: 0.7, metalness: 0.2 });
+            const darkMat = cathedralDarkMat;
+            const carvedMat = cathedralCarvedMat;
 
             const floor = new THREE.Mesh(new THREE.CylinderGeometry(36, 36, 1, 32), darkMat);
             floor.position.y = -2.2; floor.receiveShadow = true; grp.add(floor);
@@ -1686,72 +1713,105 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 squareMeshes[sq].material.opacity = areSquaresVisible ? 1.0 : 0.0;
                 squareMeshes[sq].material.needsUpdate = true;
             }
-            document.getElementById('btn-squares-show').classList.toggle('active', areSquaresVisible);
-            document.getElementById('btn-squares-hide').classList.toggle('active', !areSquaresVisible);
+            document.getElementById('btn-squares-show')?.classList.toggle('active', areSquaresVisible);
+            document.getElementById('btn-squares-hide')?.classList.toggle('active', !areSquaresVisible);
             sound.playSelect();
             showToast(areSquaresVisible ? 'Board Squares: Shown (Default)' : 'Board Squares: Hidden');
         };
-            const BOARD_THEMES = {
-            classic: { light: 0xf5f2eb, dark: 0x3b3355, bgHex: 0x0b0912, name: 'Gothic Alabaster' },
-            emerald: { light: 0xd8f3dc, dark: 0x134e4a, bgHex: 0x061a18, name: 'Emerald Sanctum' },
-            crimson: { light: 0xf9eae1, dark: 0x6b1426, bgHex: 0x1a0b10, name: 'Royal Crimson' },
-            sapphire: { light: 0xe0f2fe, dark: 0x1e3a8a, bgHex: 0x081026, name: 'Arcane Sapphire' }
+
+        const BOARD_THEMES = {
+            classic:  { light: 0xf5f2eb, dark: 0x3b3355, bgHex: 0x0b0912, floorHex: 0x1a1724, daisHex: 0x252134, cssBg: '#0b0912', name: 'Gothic Alabaster' },
+            emerald:  { light: 0xd8f3dc, dark: 0x134e4a, bgHex: 0x041f1c, floorHex: 0x0a2e2a, daisHex: 0x11423c, cssBg: '#041f1c', name: 'Emerald Sanctum' },
+            crimson:  { light: 0xf9eae1, dark: 0x6b1426, bgHex: 0x22070d, floorHex: 0x360c16, daisHex: 0x4d1220, cssBg: '#22070d', name: 'Royal Crimson' },
+            sapphire: { light: 0xe0f2fe, dark: 0x1e3a8a, bgHex: 0x06122e, floorHex: 0x0d1f4d, daisHex: 0x152c69, cssBg: '#06122e', name: 'Arcane Sapphire' }
+        };
+
+        const FRAME_THEMES = {
+            bronze: { frame: 0x262135, trim: 0x9370db, name: 'Cathedral Bronze' },
+            gold:   { frame: 0x42331b, trim: 0xfbbf24, name: 'Royal Gold' },
+            iron:   { frame: 0x121216, trim: 0x71717a, name: 'Obsidian Iron' }
         };
 
         const PIECE_THEMES = {
             classic: { wC: 0xf7f4ef, wR: 0xfbbf24, bC: 0x161224, bR: 0xa855f7, name: 'Marble vs Obsidian' },
-            royal: { wC: 0xfef3c7, wR: 0xf59e0b, bC: 0x1c1917, bR: 0xf43f5e, name: 'Ivory Gold vs Ebony' },
-            jade: { wC: 0xa7f3d0, wR: 0x10b981, bC: 0x4c0519, bR: 0xfb7185, name: 'Celestial Jade vs Ruby' },
-            frost: { wC: 0xe0f2fe, wR: 0x38bdf8, bC: 0x2e1065, bR: 0xc084fc, name: 'Frost vs Nether' }
+            royal:   { wC: 0xfef3c7, wR: 0xf59e0b, bC: 0x1c1917, bR: 0xf43f5e, name: 'Ivory Gold vs Ebony' },
+            jade:    { wC: 0xa7f3d0, wR: 0x10b981, bC: 0x4c0519, bR: 0xfb7185, name: 'Celestial Jade vs Ruby' },
+            frost:   { wC: 0xe0f2fe, wR: 0x38bdf8, bC: 0x2e1065, bR: 0xc084fc, name: 'Frost vs Nether' }
         };
 
-        // Helper to get account-specific storage key
         function getUserThemeKey(prefType) {
-            const userKey = currentAuthUser ? currentAuthUser.toLowerCase().trim() : 'guest';
-            return `chess_wiz_${userKey}_${prefType}`;
+            const activeUser = localStorage.getItem('chess_wiz_auth_user') || 'guest';
+            return `chess_wiz_${activeUser.toLowerCase().trim()}_${prefType}`;
         }
 
         window.applyBoardSquareTheme = function(k, saveToAccount = false) {
-            const t = BOARD_THEMES[k]; if (!t) return;
-            for (const sq in squareMeshes) squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
-            ['classic', 'emerald', 'crimson', 'sapphire'].forEach(id => document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k));
-            
-            // Instantly update 3D background color and fog density
+            const t = BOARD_THEMES[k];
+            if (!t) return;
+            for (const sq in squareMeshes) {
+                squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
+            }
+            ['classic', 'emerald', 'crimson', 'sapphire'].forEach(id => {
+                document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k);
+            });
+
+            // Change 3D sky, fog, HTML body, AND the 3D Cathedral floor/pillars to match the board!
             scene.background.setHex(t.bgHex);
             if (scene.fog) scene.fog.color.setHex(t.bgHex);
+            if (typeof cathedralDarkMat !== 'undefined') cathedralDarkMat.color.setHex(t.floorHex);
+            if (typeof cathedralCarvedMat !== 'undefined') cathedralCarvedMat.color.setHex(t.daisHex);
+            document.body.style.backgroundColor = t.cssBg;
 
             if (saveToAccount) {
                 localStorage.setItem(getUserThemeKey('board_theme'), k);
-                showToast(`Board Theme Saved for ${currentAuthUser || 'Guest'}: ${t.name}`);
-            } else {
-                showToast(`Board Theme: ${t.name}`);
+                sound.playSelect();
+                showToast(`Board & Sanctuary Theme Saved: ${t.name}`);
             }
-            sound.playSelect();
         };
 
         window.applyBoardFrameTheme = function(k, saveToAccount = false) {
-            const t = FRAME_THEMES[k]; if (!t) return;
-            boardFrameMesh.material.color.setHex(t.frame); boardTrimMesh.material.color.setHex(t.trim);
-            ['bronze', 'gold', 'iron'].forEach(id => document.getElementById(`theme-frame-${id}`)?.classList.toggle('active', id === k));
-            
+            const t = FRAME_THEMES[k];
+            if (!t) return;
+            if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.frame);
+            if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.trim);
+            ['bronze', 'gold', 'iron'].forEach(id => {
+                document.getElementById(`theme-frame-${id}`)?.classList.toggle('active', id === k);
+            });
+
             if (saveToAccount) {
                 localStorage.setItem(getUserThemeKey('frame_theme'), k);
-                showToast(`Altar Frame Saved for ${currentAuthUser || 'Guest'}: ${t.name}`);
-            } else {
-                showToast(`Altar Frame: ${t.name}`);
+                sound.playSelect();
+                showToast(`Altar Frame Saved: ${t.name}`);
             }
-            sound.playSelect();
         };
 
-        // Load account-specific themes upon login or startup
-        function loadAccountThemePreferences() {
+        window.applyPieceTheme = function(k, saveToAccount = false) {
+            const t = PIECE_THEMES[k];
+            if (!t) return;
+            whitePieceMaterial.color.setHex(t.wC);
+            whiteRuneMat.color.setHex(t.wR);
+            whiteRuneMat.emissive.setHex(t.wR);
+            blackPieceMaterial.color.setHex(t.bC);
+            blackRuneMat.color.setHex(t.bR);
+            blackRuneMat.emissive.setHex(t.bR);
+            ['classic', 'royal', 'jade', 'frost'].forEach(id => {
+                document.getElementById(`theme-piece-${id}`)?.classList.toggle('active', id === k);
+            });
+
+            if (saveToAccount) {
+                localStorage.setItem(getUserThemeKey('piece_theme'), k);
+                sound.playSelect();
+                showToast(`Pieces Saved: ${t.name}`);
+            }
+        };
+
+        window.loadAccountThemePreferences = function() {
             const savedBoard = localStorage.getItem(getUserThemeKey('board_theme')) || 'classic';
-            const savedPieces = localStorage.getItem(getUserThemeKey('piece_theme')) || 'classic';
             const savedFrame = localStorage.getItem(getUserThemeKey('frame_theme')) || 'bronze';
-            applyBoardSquareTheme(savedBoard, false);
-            applyPieceTheme(savedPieces, false);
-            applyBoardFrameTheme(savedFrame, false);
-        }
+            const savedPieces = localStorage.getItem(getUserThemeKey('piece_theme')) || 'classic';
+            window.applyBoardSquareTheme(savedBoard, false);
+            window.applyBoardFrameTheme(savedFrame, false);
+            window.applyPieceTheme(savedPieces, false);
+        };
 
         /* 8. WIZARD AI */
         const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
