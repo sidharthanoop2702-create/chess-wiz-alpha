@@ -377,20 +377,36 @@
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/80 mb-2">4. Sculpted Piece Vessels &amp; Runes</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="theme-piece-classic" onclick="applyPieceTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background-image: linear-gradient(135deg, #f7f4ef 50%, #161224 50%);"></span>
+                        <button type="button" id="theme-piece-classic" onclick="applyPieceTheme('classic', true)" class="menu-option-card active rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30" viewBox="0 0 16 16">
+                                <polygon points="0,0 16,0 0,16" fill="#f7f4ef"/>
+                                <polygon points="16,0 16,16 0,16" fill="#161224"/>
+                                <line x1="0" y1="16" x2="16" y2="0" stroke="#fbbf24" stroke-width="1.5"/>
+                            </svg>
                             <span>Marble vs Obsidian</span>
                         </button>
-                        <button type="button" id="theme-piece-royal" onclick="applyPieceTheme('royal', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background-image: linear-gradient(135deg, #fef3c7 50%, #1c1917 50%);"></span>
+                        <button type="button" id="theme-piece-royal" onclick="applyPieceTheme('royal', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30" viewBox="0 0 16 16">
+                                <polygon points="0,0 16,0 0,16" fill="#fef3c7"/>
+                                <polygon points="16,0 16,16 0,16" fill="#1c1917"/>
+                                <line x1="0" y1="16" x2="16" y2="0" stroke="#f59e0b" stroke-width="1.5"/>
+                            </svg>
                             <span>Ivory Gold vs Ebony</span>
                         </button>
-                        <button type="button" id="theme-piece-jade" onclick="applyPieceTheme('jade', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background-image: linear-gradient(135deg, #a7f3d0 50%, #4c0519 50%);"></span>
+                        <button type="button" id="theme-piece-jade" onclick="applyPieceTheme('jade', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30" viewBox="0 0 16 16">
+                                <polygon points="0,0 16,0 0,16" fill="#a7f3d0"/>
+                                <polygon points="16,0 16,16 0,16" fill="#4c0519"/>
+                                <line x1="0" y1="16" x2="16" y2="0" stroke="#10b981" stroke-width="1.5"/>
+                            </svg>
                             <span>Celestial Jade vs Ruby</span>
                         </button>
-                        <button type="button" id="theme-piece-frost" onclick="applyPieceTheme('frost', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
-                            <span class="theme-swatch" style="background-image: linear-gradient(135deg, #e0f2fe 50%, #2e1065 50%);"></span>
+                        <button type="button" id="theme-piece-frost" onclick="applyPieceTheme('frost', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2.5">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30" viewBox="0 0 16 16">
+                                <polygon points="0,0 16,0 0,16" fill="#e0f2fe"/>
+                                <polygon points="16,0 16,16 0,16" fill="#2e1065"/>
+                                <line x1="0" y1="16" x2="16" y2="0" stroke="#38bdf8" stroke-width="1.5"/>
+                            </svg>
                             <span>Frost vs Nether</span>
                         </button>
                     </div>
