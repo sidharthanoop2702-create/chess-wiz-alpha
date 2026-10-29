@@ -1744,11 +1744,14 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             return `chess_wiz_${activeUser.toLowerCase().trim()}_${prefType}`;
         }
 
+        // Global storage for the 3D sanctuary table and corner triangle meshes
+        window.sanctuaryTableMeshes = [];
+
         window.applyBoardSquareTheme = function(k, saveToAccount = false) {
             const t = BOARD_THEMES[k];
             if (!t) return;
 
-            // 1. Recolor the 64 chessboard squares
+            // 1. Recolor 64 chessboard squares
             for (const sq in squareMeshes) {
                 squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
             }
@@ -1756,25 +1759,30 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k);
             });
 
-            // 2. Recolor the Table directly underneath the 64 squares (boardFrameMesh & boardTrimMesh)
+            // 2. Recolor the Table directly underneath the squares
             if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.floorHex);
             if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.dark);
 
-            // 3. Recolor the Four Corner Triangles around the Altar Frame (d1 & d2 octagonal pedestals) + Floor
-            scene.traverse(obj => {
-                if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
-                    const rTop = obj.geometry.parameters?.radiusTop;
-                    // d1 (8.8) & d2 (7.2) form the 4 angled triangles sticking out around the altar frame
-                    if (rTop === 8.8 || rTop === 7.2) {
-                        obj.material.color.setHex(t.dark);
-                    } else if (rTop === 36 || rTop === 0.75) {
-                        // Main sanctuary floor and pillars
-                        obj.material.color.setHex(t.floorHex);
+            // 3. Recolor ALL cylinder pedestals (the four corner triangles & floor tiers) safely
+            if (window.sanctuaryTableMeshes.length === 0) {
+                scene.traverse(obj => {
+                    if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
+                        window.sanctuaryTableMeshes.push(obj);
                     }
+                });
+            }
+
+            window.sanctuaryTableMeshes.forEach(mesh => {
+                const rTop = mesh.geometry.parameters?.radiusTop;
+                // Target the 4 corner altar triangles (d1 / d2 tiers)
+                if (Math.abs(rTop - 8.8) < 0.1 || Math.abs(rTop - 7.2) < 0.1) {
+                    mesh.material.color.setHex(t.dark);
+                } else if (Math.abs(rTop - 36) < 0.5 || Math.abs(rTop - 0.75) < 0.1) {
+                    mesh.material.color.setHex(t.floorHex);
                 }
             });
 
-            // 4. Recolor sky, fog, and HTML background
+            // 4. Recolor background, fog, and page body
             scene.background.setHex(t.bgHex);
             if (scene.fog) scene.fog.color.setHex(t.bgHex);
             document.body.style.backgroundColor = t.cssBg;
@@ -1790,17 +1798,21 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             const t = FRAME_THEMES[k];
             if (!t) return;
 
-            // Recolor the outer frame and the table surface under the squares
             if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.frame);
             if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.trim);
 
-            // Also recolor the 4 corner triangles around the altar frame (d1 & d2)
-            scene.traverse(obj => {
-                if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
-                    const rTop = obj.geometry.parameters?.radiusTop;
-                    if (rTop === 8.8) obj.material.color.setHex(t.frame);
-                    if (rTop === 7.2) obj.material.color.setHex(t.trim);
-                }
+            if (window.sanctuaryTableMeshes.length === 0) {
+                scene.traverse(obj => {
+                    if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
+                        window.sanctuaryTableMeshes.push(obj);
+                    }
+                });
+            }
+
+            window.sanctuaryTableMeshes.forEach(mesh => {
+                const rTop = mesh.geometry.parameters?.radiusTop;
+                if (Math.abs(rTop - 8.8) < 0.1) mesh.material.color.setHex(t.frame);
+                if (Math.abs(rTop - 7.2) < 0.1) mesh.material.color.setHex(t.trim);
             });
 
             ['bronze', 'gold', 'iron'].forEach(id => {
