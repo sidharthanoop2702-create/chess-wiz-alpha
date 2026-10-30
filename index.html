@@ -1740,7 +1740,7 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
         };
 
         function getUserThemeKey(prefType) {
-            const activeUser = localStorage.getItem('chess_wiz_auth_user') || 'guest';
+            const activeUser = (typeof currentAuthUser !== 'undefined' && currentAuthUser) ? currentAuthUser : (localStorage.getItem('chess_wiz_auth_user') || 'guest');
             return `chess_wiz_${activeUser.toLowerCase().trim()}_${prefType}`;
         }
 
@@ -2913,8 +2913,11 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             showProfileEditorView();
-            syncGameToCloud(true, chess.game_over());
+
+            // 👇 THIS ENSURES THE THEMES LOAD FOR THIS SPECIFIC ACCOUNT IMMEDIATELY 👇
             loadAccountThemePreferences();
+            
+            syncGameToCloud(true, chess.game_over());
         }
 
         // Keep session synced with Firebase Auth state
