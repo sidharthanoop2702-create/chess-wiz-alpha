@@ -435,6 +435,13 @@
                         </button>
                     </div>
                 </div>
+                <!-- Save Theme Changes Button -->
+                <div class="pt-1">
+                    <button type="button" onclick="window.saveAccountThemePreferences()" class="w-full md3-btn md3-btn-primary !h-10 !text-xs font-bold shadow-lg flex items-center justify-center gap-2">
+                        <span class="material-symbols-rounded !text-base">save</span>
+                        <span>Save Theme Changes</span>
+                    </button>
+                </div>
             </div>
 
             <!-- 5. START MENU ANALYSE VIEW (Previous Cloud Game or File Explorer Import) -->
@@ -904,7 +911,7 @@
         const boardGroup = new THREE.Group(); scene.add(boardGroup);
         const squareMeshes = {}, highlightMeshes = {};
         let boardFrameMesh = null, boardTrimMesh = null;
-const lightSquareBaseMat = new THREE.MeshStandardMaterial({
+        const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             color: 0xf5f2eb,
             roughness: 0.25,
             metalness: 0.05
@@ -1747,11 +1754,20 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
         // Global storage for the 3D sanctuary table and corner triangle meshes
         window.sanctuaryTableMeshes = [];
 
-        window.applyBoardSquareTheme = function(k, saveToAccount = false) {
+        let currentSelectedBoardTheme = 'classic';
+        let currentSelectedFrameTheme = 'bronze';
+        let currentSelectedPieceTheme = 'classic';
+
+        function getUserThemeKey(prefType) {
+            const activeUser = (window.currentAuthUser || localStorage.getItem('chess_wiz_auth_user') || 'guest').toLowerCase().trim();
+            return `chess_wiz_${activeUser}_${prefType}`;
+        }
+
+        window.applyBoardSquareTheme = function(k, playSnd = false) {
             const t = BOARD_THEMES[k];
             if (!t) return;
+            currentSelectedBoardTheme = k;
 
-            // 1. Recolor 64 chessboard squares
             for (const sq in squareMeshes) {
                 squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
             }
@@ -1759,12 +1775,11 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k);
             });
 
-            // 2. Recolor the Table directly underneath the squares
             if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.floorHex);
             if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.dark);
 
-            // 3. Recolor ALL cylinder pedestals (the four corner triangles & floor tiers) safely
-            if (window.sanctuaryTableMeshes.length === 0) {
+            if (!window.sanctuaryTableMeshes || window.sanctuaryTableMeshes.length === 0) {
+                window.sanctuaryTableMeshes = [];
                 scene.traverse(obj => {
                     if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
                         window.sanctuaryTableMeshes.push(obj);
@@ -1774,7 +1789,6 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
 
             window.sanctuaryTableMeshes.forEach(mesh => {
                 const rTop = mesh.geometry.parameters?.radiusTop;
-                // Target the 4 corner altar triangles (d1 / d2 tiers)
                 if (Math.abs(rTop - 8.8) < 0.1 || Math.abs(rTop - 7.2) < 0.1) {
                     mesh.material.color.setHex(t.dark);
                 } else if (Math.abs(rTop - 36) < 0.5 || Math.abs(rTop - 0.75) < 0.1) {
@@ -1782,26 +1796,23 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 }
             });
 
-            // 4. Recolor background, fog, and page body
             scene.background.setHex(t.bgHex);
             if (scene.fog) scene.fog.color.setHex(t.bgHex);
             document.body.style.backgroundColor = t.cssBg;
 
-            if (saveToAccount) {
-                localStorage.setItem(getUserThemeKey('board_theme'), k);
-                sound.playSelect();
-                showToast(`Board & Altar Table Saved: ${t.name}`);
-            }
+            if (playSnd) sound.playSelect();
         };
 
-        window.applyBoardFrameTheme = function(k, saveToAccount = false) {
+        window.applyBoardFrameTheme = function(k, playSnd = false) {
             const t = FRAME_THEMES[k];
             if (!t) return;
+            currentSelectedFrameTheme = k;
 
             if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.frame);
             if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.trim);
 
-            if (window.sanctuaryTableMeshes.length === 0) {
+            if (!window.sanctuaryTableMeshes || window.sanctuaryTableMeshes.length === 0) {
+                window.sanctuaryTableMeshes = [];
                 scene.traverse(obj => {
                     if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
                         window.sanctuaryTableMeshes.push(obj);
@@ -1819,16 +1830,14 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 document.getElementById(`theme-frame-${id}`)?.classList.toggle('active', id === k);
             });
 
-            if (saveToAccount) {
-                localStorage.setItem(getUserThemeKey('frame_theme'), k);
-                sound.playSelect();
-                showToast(`Altar Frame & Pedestal Saved: ${t.name}`);
-            }
+            if (playSnd) sound.playSelect();
         };
 
-        window.applyPieceTheme = function(k, saveToAccount = false) {
+        window.applyPieceTheme = function(k, playSnd = false) {
             const t = PIECE_THEMES[k];
             if (!t) return;
+            currentSelectedPieceTheme = k;
+
             whitePieceMaterial.color.setHex(t.wC);
             whiteRuneMat.color.setHex(t.wR);
             whiteRuneMat.emissive.setHex(t.wR);
@@ -1839,21 +1848,61 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 document.getElementById(`theme-piece-${id}`)?.classList.toggle('active', id === k);
             });
 
-            if (saveToAccount) {
-                localStorage.setItem(getUserThemeKey('piece_theme'), k);
-                sound.playSelect();
-                showToast(`Pieces Saved: ${t.name}`);
-            }
+            if (playSnd) sound.playSelect();
+        };
+
+        // Triggered when clicking the "Save Theme Changes" button
+        window.saveAccountThemePreferences = function() {
+            localStorage.setItem(getUserThemeKey('board_theme'), currentSelectedBoardTheme);
+            localStorage.setItem(getUserThemeKey('frame_theme'), currentSelectedFrameTheme);
+            localStorage.setItem(getUserThemeKey('piece_theme'), currentSelectedPieceTheme);
+            localStorage.setItem(getUserThemeKey('squares_visible'), String(areSquaresVisible));
+
+            // Re-run loader to verify and apply saved state
+            window.loadAccountThemePreferences();
+            sound.playFanfare();
+            const userLabel = localStorage.getItem('chess_wiz_auth_user') || 'Guest';
+            showToast(`Theme changes saved for ${userLabel}!`);
+        };
+
+        // Triggered when clicking the "Save Theme Changes" button
+        window.saveAccountThemePreferences = function() {
+            localStorage.setItem(getUserThemeKey('board_theme'), currentSelectedBoardTheme);
+            localStorage.setItem(getUserThemeKey('frame_theme'), currentSelectedFrameTheme);
+            localStorage.setItem(getUserThemeKey('piece_theme'), currentSelectedPieceTheme);
+            localStorage.setItem(getUserThemeKey('squares_visible'), String(areSquaresVisible));
+
+            window.loadAccountThemePreferences();
+            sound.playFanfare();
+            const userLabel = localStorage.getItem('chess_wiz_auth_user') || 'Guest';
+            showToast(`Theme changes saved for ${userLabel}!`);
         };
 
         window.loadAccountThemePreferences = function() {
             const savedBoard = localStorage.getItem(getUserThemeKey('board_theme')) || 'classic';
             const savedFrame = localStorage.getItem(getUserThemeKey('frame_theme')) || 'bronze';
             const savedPieces = localStorage.getItem(getUserThemeKey('piece_theme')) || 'classic';
-            window.applyBoardSquareTheme(savedBoard, false);
+            const savedVis = localStorage.getItem(getUserThemeKey('squares_visible'));
+
+            // Apply Frame first, then Board Square Theme so the Board Theme colors the table & 4 corner triangles!
             window.applyBoardFrameTheme(savedFrame, false);
+            window.applyBoardSquareTheme(savedBoard, false);
             window.applyPieceTheme(savedPieces, false);
+
+            if (savedVis !== null) {
+                areSquaresVisible = (savedVis === 'true');
+                for (const sq in squareMeshes) {
+                    squareMeshes[sq].material.transparent = !areSquaresVisible;
+                    squareMeshes[sq].material.opacity = areSquaresVisible ? 1.0 : 0.0;
+                    squareMeshes[sq].material.needsUpdate = true;
+                }
+                document.getElementById('btn-squares-show')?.classList.toggle('active', areSquaresVisible);
+                document.getElementById('btn-squares-hide')?.classList.toggle('active', !areSquaresVisible);
+            }
         };
+
+        // Auto-load saved themes as soon as the page starts
+        setTimeout(() => { window.loadAccountThemePreferences(); }, 150);
 
         /* 8. WIZARD AI */
         const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
@@ -2240,18 +2289,22 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
 
         window.analysePreviousCloudGame = function() {
             const srcLabel = document.getElementById('start-analyse-source-label');
-            if (chess.history().length > 0) {
-                if (srcLabel) srcLabel.textContent = `Reviewing current match (${chess.history().length} moves played)`;
-                runMoveAnalysisIntoContainers(chess.history({ verbose: true }), 'start-analysis-list', 'start-analysis-summary-badges');
-                sound.playSelect();
-                return;
-            }
+            // 1. Always prioritize the last COMPLETED match saved in CLOUD_PREV_GAME_KEY
+            // 2. Fallback to the active incomplete match if no completed match exists yet
             const raw = localStorage.getItem(CLOUD_PREV_GAME_KEY) || localStorage.getItem(CLOUD_ACTIVE_KEY);
+
             if (!raw) {
+                if (chess.history().length > 0) {
+                    if (srcLabel) srcLabel.textContent = `Reviewing current match (${chess.history().length} moves played)`;
+                    runMoveAnalysisIntoContainers(chess.history({ verbose: true }), 'start-analysis-list', 'start-analysis-summary-badges');
+                    sound.playSelect();
+                    return;
+                }
                 if (srcLabel) srcLabel.textContent = 'No previous Cloud match found yet.';
-                document.getElementById('start-analysis-list').innerHTML = '<div class="text-xs text-white/50 py-4 text-center">Play a match or click "Import File..." to analyse!</div>';
+                document.getElementById('start-analysis-list').innerHTML = '<div class="text-xs text-white/50 py-4 text-center">Play and finish a match or click "Import File..." to analyse!</div>';
                 return;
             }
+
             try {
                 const data = JSON.parse(raw);
                 let hist = data.historyVerbose || [];
@@ -2259,7 +2312,8 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                     const temp = new Chess();
                     if (temp.load_pgn(data.pgn)) hist = temp.history({ verbose: true });
                 }
-                if (srcLabel) srcLabel.textContent = `Reviewing saved Cloud match (${hist.length} moves)`;
+                const statusTag = data.completed ? 'Completed Match' : 'In-Progress Match';
+                if (srcLabel) srcLabel.textContent = `Reviewing ${statusTag} (${hist.length} moves)`;
                 runMoveAnalysisIntoContainers(hist, 'start-analysis-list', 'start-analysis-summary-badges');
                 sound.playSelect();
             } catch (e) {
@@ -2393,6 +2447,10 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
             document.getElementById('puzzle-banner').classList.add('hidden');
             chess.reset(); lastMoveSquares = []; clearSelectionAndHighlights();
             syncBoardWithEngine(true); syncHintButtonUI(); sound.playSelect();
+
+            // Immediately save the new match upon clicking "Enter the Cathedral"
+            window.syncGameToCloud(true, false);
+
             showToast(`New Match • ${gameMode === 'pvp' ? 'Pass & Play' : 'vs ' + DIFF_META[aiDifficulty].name}`);
             if (gameMode === 'ai' && playerColor === 'b') setTimeout(makeWizardAIMove, 700);
         }
@@ -2422,6 +2480,11 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
         const CLOUD_PREV_GAME_KEY = 'chess_wiz_cloud_previous_match';
 
         window.syncGameToCloud = async function(isSilent = true, isFinishedMatch = false) {
+            if (gameMode === 'puzzles') return null;
+
+            const isOver = Boolean(isFinishedMatch || chess.game_over());
+            const movesVerbose = chess.history({ verbose: true });
+
             const payload = {
                 title: "Chess Wiz Cloud Save",
                 savedAt: new Date().toISOString(),
@@ -2430,15 +2493,19 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                 aiDifficulty,
                 fen: chess.fen(),
                 pgn: chess.pgn(),
-                historyVerbose: chess.history({ verbose: true })
+                historyVerbose: movesVerbose,
+                completed: isOver
             };
             const jsonStr = JSON.stringify(payload, null, 2);
 
-            // 1. Instant Cloud Storage Sync (Browser Cloud Storage + IndexedDB / Remote Sync)
             try {
-                localStorage.setItem(CLOUD_ACTIVE_KEY, jsonStr);
-                if (isFinishedMatch || chess.history().length > 0) {
+                if (isOver && movesVerbose.length > 0) {
+                    // Game is COMPLETED -> Save to CLOUD_PREV_GAME_KEY (for Analyse) and clear incomplete slot
                     localStorage.setItem(CLOUD_PREV_GAME_KEY, jsonStr);
+                    localStorage.removeItem(CLOUD_ACTIVE_KEY);
+                } else {
+                    // Game is INCOMPLETE -> Save immediately to CLOUD_ACTIVE_KEY (for Continue Game)
+                    localStorage.setItem(CLOUD_ACTIVE_KEY, jsonStr);
                 }
             } catch (e) {}
 
@@ -2935,6 +3002,7 @@ const lightSquareBaseMat = new THREE.MeshStandardMaterial({
                         localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
                     }
                     updateAuthHeaderUI();
+                    window.loadAccountThemePreferences();
                 }
             });
         }
