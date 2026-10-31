@@ -1859,14 +1859,14 @@
             if (boardTrimMesh) boardTrimMesh.material = boardTrimMesh.material.clone();
         }
 
-        // 1. BOARD SQUARE THEME -> Colors the 64 Squares + Table Under the Board + 4 Corner Triangles + Floor/Background
+        // 1. BOARD SQUARE THEME -> Colors ONLY the 64 Squares + Inner Table Trim + Floor/Background (Never touches Altar Frame or Altar Pedestals!)
         window.applyBoardSquareTheme = function(k, playSnd = false) {
             const t = BOARD_THEMES[k];
             if (!t) return;
             currentSelectedBoardTheme = k;
             isolateCathedralMaterialsOnce();
 
-            // 1. Color the 64 chessboard squares
+            // Color the 64 chessboard squares
             for (const sq in squareMeshes) {
                 squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
             }
@@ -1874,22 +1874,18 @@
                 document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k);
             });
 
-            // 2. Color the table slab directly underneath the 64 squares
+            // Color the inner table trim directly underneath the squares
             if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.dark);
 
-            // 3. Color the 4 corner triangles / octagonal table tiers (8.8 & 7.2) + Cathedral floor & pillars
+            // Color ONLY the Cathedral Floor and Pillars (DO NOT touch altar pedestals 8.8 or 7.2!)
             window.sanctuaryTableMeshes.forEach(mesh => {
                 const rTop = mesh.geometry.parameters?.radiusTop;
-                if (Math.abs(rTop - 8.8) < 0.1) {
-                    mesh.material.color.setHex(t.daisHex);
-                } else if (Math.abs(rTop - 7.2) < 0.1) {
-                    mesh.material.color.setHex(t.dark);
-                } else if (Math.abs(rTop - 36) < 0.5 || Math.abs(rTop - 0.75) < 0.1) {
+                if (Math.abs(rTop - 36) < 0.5 || Math.abs(rTop - 0.75) < 0.1) {
                     mesh.material.color.setHex(t.floorHex);
                 }
             });
 
-            // 4. Color the 3D Sky, Fog, and HTML Background
+            // Color the 3D Sky, Fog, and HTML Background
             scene.background.setHex(t.bgHex);
             if (scene.fog) scene.fog.color.setHex(t.bgHex);
             document.body.style.backgroundColor = t.cssBg;
@@ -1897,15 +1893,25 @@
             if (playSnd) sound.playSelect();
         };
 
-        // 2. SANCTUARY ALTAR FRAME -> ONLY colors the outer Altar Frame border around the squares
+        // 2. SANCTUARY ALTAR FRAME -> Colors ONLY the Outer Altar Frame + the 4 Corner Altar Triangles/Pedestals (Never touches Background or Board Squares!)
         window.applyBoardFrameTheme = function(k, playSnd = false) {
             const t = FRAME_THEMES[k];
             if (!t) return;
             currentSelectedFrameTheme = k;
             isolateCathedralMaterialsOnce();
 
-            // Only color the outer border frame (does NOT touch the table under the squares or the background)
+            // Color the outer altar frame border
             if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.frame);
+
+            // Color the 4 corner altar triangles / octagonal table tiers (8.8 & 7.2 pedestals)
+            window.sanctuaryTableMeshes.forEach(mesh => {
+                const rTop = mesh.geometry.parameters?.radiusTop;
+                if (Math.abs(rTop - 8.8) < 0.1) {
+                    mesh.material.color.setHex(t.frame);
+                } else if (Math.abs(rTop - 7.2) < 0.1) {
+                    mesh.material.color.setHex(t.trim);
+                }
+            });
 
             ['bronze', 'gold', 'iron'].forEach(id => {
                 document.getElementById(`theme-frame-${id}`)?.classList.toggle('active', id === k);
