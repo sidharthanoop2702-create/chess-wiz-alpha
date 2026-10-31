@@ -1655,6 +1655,13 @@
             updateUIStatus(); updateCapturedCounts(); syncHintButtonUI();
             syncGameToCloud(true, chess.game_over());
 
+            // Trigger AI Commentary when the player completes a move
+            if (!anim.isPuzzleAutoReply && gameMode === 'ai' && result.color === playerColor) {
+                if (typeof evaluateAndCommentOnPlayerMove === 'function') {
+                    evaluateAndCommentOnPlayerMove(result);
+                }
+            }
+
             // --- PUZZLE MODE AUTO-REPLY & COMPLETION ---
             if (gameMode === 'puzzles') {
                 const pz = WIZARD_PUZZLES[currentPuzzleIndex];
@@ -2686,9 +2693,6 @@
             closeInGameQuickMenu();
             // Save current match state before returning to the main Start Menu
             window.syncGameToCloud(true, chess.game_over());
-            if (!anim.isPuzzleAutoReply && gameMode === 'ai' && result.color === playerColor) {
-             evaluateAndCommentOnPlayerMove(result);
-         }
             openStartMenu();
             showToast('Match exited — Returned to Start Menu');
         };
@@ -2986,9 +2990,8 @@
                 sw.mesh.scale.set(sc, 1, sc); sw.mesh.material.opacity = (1 - p) * 0.9;
             }
             
-            if (!anim.isPuzzleAutoReply && gameMode === 'ai' && result.color === playerColor) {
-             evaluateAndCommentOnPlayerMove(result);
-         }
+            // Keeps the emojis glued to the 3D Kings when the camera moves
+            if (typeof updateKingBubblesScreenPosition === 'function') updateKingBubblesScreenPosition();
 
             renderer.render(scene, camera);
         }
