@@ -999,40 +999,71 @@
         }
 
         (function buildChessboard() {
-            const bSize = 8 * SQUARE_SIZE + 1.45;
+            const innerSize = 8 * SQUARE_SIZE + 0.16;
+            const bSize = 8 * SQUARE_SIZE + 1.65;
 
-            // 1. Sanctuary Altar Frame (Outer Border)
-            boardFrameMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(bSize, 0.4, bSize),
-                new THREE.MeshStandardMaterial({ color: 0x262135, roughness: 0.5, metalness: 0.4 })
-            );
-            boardFrameMesh.position.y = -0.32;
-            boardFrameMesh.receiveShadow = true;
-            boardGroup.add(boardFrameMesh);
-
-            // 2. The Table slab directly underneath the 64 squares (strictly controlled by Board Square theme)
+            // 1. The Table slab directly underneath the 64 squares (Controlled by Board Square Theme)
             boardTrimMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(8 * SQUARE_SIZE + 0.28, 0.42, 8 * SQUARE_SIZE + 0.28),
-                new THREE.MeshStandardMaterial({ color: 0x3b3355, roughness: 0.3, metalness: 0.2 })
+                new THREE.BoxGeometry(innerSize, 0.38, innerSize),
+                new THREE.MeshStandardMaterial({ color: 0x3b3355, roughness: 0.35, metalness: 0.2 })
             );
-            boardTrimMesh.position.y = -0.30;
+            boardTrimMesh.position.y = -0.28; // Top surface at -0.09
+            boardTrimMesh.receiveShadow = true;
             boardGroup.add(boardTrimMesh);
 
-            // 3. Four Corner Triangles / Accents on the corners of the Altar Frame
+            // 2. Sanctuary Altar Frame (4 Raised Outer Border Beams surrounding the board)
+            boardFrameMesh = new THREE.Group();
+            window.altarFrameBeams = [];
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x262135, roughness: 0.4, metalness: 0.55 });
+            const rimThickness = (bSize - innerSize) / 2; // ~0.745 wide border
+            const rimHeight = 0.48;
+            const rimY = -0.22; // Top surface at +0.02 (visibly raised around the squares!)
+            const rimOffset = (innerSize + rimThickness) / 2;
+
+            // North & South frame beams
+            const nsGeo = new THREE.BoxGeometry(innerSize, rimHeight, rimThickness);
+            const northBeam = new THREE.Mesh(nsGeo, frameMat.clone());
+            northBeam.position.set(0, rimY, -rimOffset);
+            northBeam.receiveShadow = true; northBeam.castShadow = true;
+            const southBeam = new THREE.Mesh(nsGeo, frameMat.clone());
+            southBeam.position.set(0, rimY, rimOffset);
+            southBeam.receiveShadow = true; southBeam.castShadow = true;
+
+            // East & West frame beams
+            const ewGeo = new THREE.BoxGeometry(rimThickness, rimHeight, innerSize);
+            const westBeam = new THREE.Mesh(ewGeo, frameMat.clone());
+            westBeam.position.set(-rimOffset, rimY, 0);
+            westBeam.receiveShadow = true; westBeam.castShadow = true;
+            const eastBeam = new THREE.Mesh(ewGeo, frameMat.clone());
+            eastBeam.position.set(rimOffset, rimY, 0);
+            eastBeam.receiveShadow = true; eastBeam.castShadow = true;
+
+            [northBeam, southBeam, westBeam, eastBeam].forEach(b => {
+                boardFrameMesh.add(b);
+                window.altarFrameBeams.push(b);
+            });
+            boardGroup.add(boardFrameMesh);
+
+            // 3. Four Corner Triangles / Pillars on the 4 corners of the Altar Frame (Controlled by Altar Frame Theme)
             window.altarCornerMeshes = [];
-            const cornerGeo = new THREE.BoxGeometry(0.72, 0.44, 0.72);
-            const cornerMat = new THREE.MeshStandardMaterial({ color: 0x9370db, roughness: 0.3, metalness: 0.7 });
-            const cOffset = bSize / 2 - 0.36;
-            [[-cOffset, -cOffset], [cOffset, -cOffset], [-cOffset, cOffset], [cOffset, cOffset]].forEach(([x, z]) => {
-                const cornerMesh = new THREE.Mesh(cornerGeo, cornerMat);
-                cornerMesh.position.set(x, -0.30, z);
+            const cornerGeo = new THREE.BoxGeometry(rimThickness + 0.06, rimHeight + 0.08, rimThickness + 0.06);
+            const cornerMat = new THREE.MeshStandardMaterial({ color: 0x9370db, roughness: 0.25, metalness: 0.75 });
+            [
+                [-rimOffset, -rimOffset],
+                [rimOffset, -rimOffset],
+                [-rimOffset, rimOffset],
+                [rimOffset, rimOffset]
+            ].forEach(([x, z]) => {
+                const cornerMesh = new THREE.Mesh(cornerGeo, cornerMat.clone());
+                cornerMesh.position.set(x, rimY + 0.02, z); // Top surface at +0.08
                 cornerMesh.castShadow = true;
+                cornerMesh.receiveShadow = true;
                 boardGroup.add(cornerMesh);
                 window.altarCornerMeshes.push(cornerMesh);
             });
 
-            // 4. Algebraic Rank & File Coordinate Labels (A-H, 1-8) placed cleanly ABOVE the Altar Frame
-            const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'], off = (8 * SQUARE_SIZE) / 2 + 0.52;
+            // 4. Algebraic Rank & File Coordinate Labels (A-H, 1-8) sitting right on top of the Altar Frame beams
+            const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
             const lGeo = new THREE.PlaneGeometry(0.46, 0.46); lGeo.rotateX(-Math.PI / 2);
             for (let i = 0; i < 8; i++) {
                 const pos = i * SQUARE_SIZE - BOARD_OFFSET;
@@ -1045,11 +1076,11 @@
                     polygonOffsetFactor: -4
                 });
 
-                // Placed at y = 0.02 (strictly above the altar frame top surface so they are always visible)
-                const fs = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fs.position.set(pos, 0.02, off); boardGroup.add(fs);
-                const fn = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fn.position.set(pos, 0.02, -off); fn.rotation.y = Math.PI; boardGroup.add(fn);
-                const rw = new THREE.Mesh(lGeo, makeLabelMat(rTex)); rw.position.set(-off, 0.02, pos); boardGroup.add(rw);
-                const re = new THREE.Mesh(lGeo, makeLabelMat(rTex)); re.position.set(off, 0.02, pos); boardGroup.add(re);
+                // Placed at y = 0.025 (directly on top of the raised Altar Frame beams at y = 0.02)
+                const fs = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fs.position.set(pos, 0.025, rimOffset); boardGroup.add(fs);
+                const fn = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fn.position.set(pos, 0.025, -rimOffset); fn.rotation.y = Math.PI; boardGroup.add(fn);
+                const rw = new THREE.Mesh(lGeo, makeLabelMat(rTex)); rw.position.set(-rimOffset, 0.025, pos); boardGroup.add(rw);
+                const re = new THREE.Mesh(lGeo, makeLabelMat(rTex)); re.position.set(rimOffset, 0.025, pos); boardGroup.add(re);
             }
 
             // 5. Distinct 64 3D Tiles sitting above the table
@@ -1866,22 +1897,24 @@
             window._cathedralMatsIsolated = true;
             window.sanctuaryTableMeshes = [];
             scene.traverse(obj => {
-                if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
+                if (obj.isMesh && obj.geometry && (obj.geometry.type === 'CylinderGeometry' || obj.geometry.type === 'TubeGeometry')) {
                     obj.material = obj.material.clone();
                     window.sanctuaryTableMeshes.push(obj);
                 }
             });
-            if (boardFrameMesh) boardFrameMesh.material = boardFrameMesh.material.clone();
-            if (boardTrimMesh) boardTrimMesh.material = boardTrimMesh.material.clone();
+            if (boardTrimMesh && boardTrimMesh.material) {
+                boardTrimMesh.material = boardTrimMesh.material.clone();
+            }
         }
 
-        // 1. BOARD SQUARE THEME -> Colors ONLY the 64 Squares + Inner Table Trim + Floor/Background
+        // 1. BOARD SQUARE THEME -> Colors the 64 Squares + The Entire Table Under the Board + Pedestals + Floor/Background
         window.applyBoardSquareTheme = function(k, playSnd = false) {
             const t = BOARD_THEMES[k];
             if (!t) return;
             currentSelectedBoardTheme = k;
             isolateCathedralMaterialsOnce();
 
+            // Color the 64 chessboard squares
             for (const sq in squareMeshes) {
                 squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
             }
@@ -1889,16 +1922,28 @@
                 document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k);
             });
 
-            // The table slab under the squares matches the board dark square color
-            if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.dark);
+            // Color the table slab directly underneath the 64 squares
+            if (boardTrimMesh && boardTrimMesh.material) {
+                boardTrimMesh.material.color.setHex(t.dark);
+            }
 
+            // Color the octagonal table pedestals under the board (8.8 & 7.2) + Floor (36) + Pillars (0.75) + Vaulted Ribs
             window.sanctuaryTableMeshes.forEach(mesh => {
+                if (mesh.geometry.type === 'TubeGeometry') {
+                    mesh.material.color.setHex(t.daisHex);
+                    return;
+                }
                 const rTop = mesh.geometry.parameters?.radiusTop;
-                if (Math.abs(rTop - 36) < 0.5 || Math.abs(rTop - 0.75) < 0.1) {
+                if (Math.abs(rTop - 8.8) < 0.1) {
+                    mesh.material.color.setHex(t.daisHex);
+                } else if (Math.abs(rTop - 7.2) < 0.1) {
+                    mesh.material.color.setHex(t.dark);
+                } else if (Math.abs(rTop - 36) < 0.5 || Math.abs(rTop - 0.75) < 0.1) {
                     mesh.material.color.setHex(t.floorHex);
                 }
             });
 
+            // Color the Sky, Fog, and HTML Background
             scene.background.setHex(t.bgHex);
             if (scene.fog) scene.fog.color.setHex(t.bgHex);
             document.body.style.backgroundColor = t.cssBg;
@@ -1906,17 +1951,21 @@
             if (playSnd) sound.playSelect();
         };
 
-        // 2. SANCTUARY ALTAR FRAME -> Colors ONLY the Outer Altar Frame + the 4 Corner Triangles
+        // 2. SANCTUARY ALTAR FRAME -> Colors ONLY the 4 Raised Altar Frame Border Beams + the 4 Corner Blocks
         window.applyBoardFrameTheme = function(k, playSnd = false) {
             const t = FRAME_THEMES[k];
             if (!t) return;
             currentSelectedFrameTheme = k;
             isolateCathedralMaterialsOnce();
 
-            // Color the outer altar frame border
-            if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.frame);
+            // Color the 4 raised Altar Frame border beams around the chessboard
+            if (window.altarFrameBeams) {
+                window.altarFrameBeams.forEach(beam => {
+                    beam.material.color.setHex(t.frame);
+                });
+            }
 
-            // Color the 4 corner altar frame blocks
+            // Color the 4 corner blocks on the corners of the Altar Frame
             if (window.altarCornerMeshes) {
                 window.altarCornerMeshes.forEach(mesh => {
                     mesh.material.color.setHex(t.trim);
