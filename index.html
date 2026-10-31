@@ -999,75 +999,96 @@
         }
 
         (function buildChessboard() {
-            const innerSize = 8 * SQUARE_SIZE + 0.16;
-            const bSize = 8 * SQUARE_SIZE + 1.65;
+            const innerSize = 8 * SQUARE_SIZE + 0.16; // 9.36
+            const bSize = 8 * SQUARE_SIZE + 1.44;     // 10.64 (0.64 wide frame on all 4 sides)
+            const halfIn = innerSize / 2;             // 4.68
+            const halfOut = bSize / 2;                // 5.32
 
             // 1. The Table slab directly underneath the 64 squares (Controlled by Board Square Theme)
             boardTrimMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(innerSize, 0.38, innerSize),
+                new THREE.BoxGeometry(innerSize, 0.36, innerSize),
                 new THREE.MeshStandardMaterial({ color: 0x3b3355, roughness: 0.35, metalness: 0.2 })
             );
-            boardTrimMesh.position.y = -0.28; // Top surface at -0.09
+            boardTrimMesh.position.y = -0.28; // Top surface at y = -0.10
             boardTrimMesh.receiveShadow = true;
             boardGroup.add(boardTrimMesh);
 
-            // 2. Sanctuary Altar Frame (4 Raised Outer Border Beams surrounding the board)
-            boardFrameMesh = new THREE.Group();
-            window.altarFrameBeams = [];
-            const frameMat = new THREE.MeshStandardMaterial({ color: 0x262135, roughness: 0.4, metalness: 0.55 });
-            const rimThickness = (bSize - innerSize) / 2; // ~0.745 wide border
-            const rimHeight = 0.48;
-            const rimY = -0.22; // Top surface at +0.02 (visibly raised around the squares!)
-            const rimOffset = (innerSize + rimThickness) / 2;
+            // 2. Complete Square Altar Frame (4 Mitered Sides, Top Surface at y = 0.02)
+            const outerBox = new THREE.Shape();
+            outerBox.moveTo(-halfOut, -halfOut);
+            outerBox.lineTo(halfOut, -halfOut);
+            outerBox.lineTo(halfOut, halfOut);
+            outerBox.lineTo(-halfOut, halfOut);
+            outerBox.closePath();
 
-            // North & South frame beams
-            const nsGeo = new THREE.BoxGeometry(innerSize, rimHeight, rimThickness);
-            const northBeam = new THREE.Mesh(nsGeo, frameMat.clone());
-            northBeam.position.set(0, rimY, -rimOffset);
-            northBeam.receiveShadow = true; northBeam.castShadow = true;
-            const southBeam = new THREE.Mesh(nsGeo, frameMat.clone());
-            southBeam.position.set(0, rimY, rimOffset);
-            southBeam.receiveShadow = true; southBeam.castShadow = true;
+            const innerHole = new THREE.Path();
+            innerHole.moveTo(-halfIn, -halfIn);
+            innerHole.lineTo(-halfIn, halfIn);
+            innerHole.lineTo(halfIn, halfIn);
+            innerHole.lineTo(halfIn, -halfIn);
+            innerHole.closePath();
+            outerBox.holes.push(innerHole);
 
-            // East & West frame beams
-            const ewGeo = new THREE.BoxGeometry(rimThickness, rimHeight, innerSize);
-            const westBeam = new THREE.Mesh(ewGeo, frameMat.clone());
-            westBeam.position.set(-rimOffset, rimY, 0);
-            westBeam.receiveShadow = true; westBeam.castShadow = true;
-            const eastBeam = new THREE.Mesh(ewGeo, frameMat.clone());
-            eastBeam.position.set(rimOffset, rimY, 0);
-            eastBeam.receiveShadow = true; eastBeam.castShadow = true;
-
-            [northBeam, southBeam, westBeam, eastBeam].forEach(b => {
-                boardFrameMesh.add(b);
-                window.altarFrameBeams.push(b);
+            const frameGeo = new THREE.ExtrudeGeometry(outerBox, {
+                depth: 0.30,
+                bevelEnabled: false
             });
+            frameGeo.rotateX(-Math.PI / 2); // Extrudes from y = 0 to y = +0.30
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x262135, roughness: 0.4, metalness: 0.55 });
+
+            boardFrameMesh = new THREE.Mesh(frameGeo, frameMat);
+            // Position at y = -0.28 so the top surface of the frame is at (-0.28 + 0.30) = +0.02!
+            boardFrameMesh.position.y = -0.28;
+            boardFrameMesh.receiveShadow = true;
+            boardFrameMesh.castShadow = true;
             boardGroup.add(boardFrameMesh);
 
-            // 3. Four Corner Triangles / Pillars on the 4 corners of the Altar Frame (Controlled by Altar Frame Theme)
+            // 3. Four Photo-Frame Corner Triangles (Built directly at each corner — no rotation bugs!)
             window.altarCornerMeshes = [];
-            const cornerGeo = new THREE.BoxGeometry(rimThickness + 0.06, rimHeight + 0.08, rimThickness + 0.06);
             const cornerMat = new THREE.MeshStandardMaterial({ color: 0x9370db, roughness: 0.25, metalness: 0.75 });
-            [
-                [-rimOffset, -rimOffset],
-                [rimOffset, -rimOffset],
-                [-rimOffset, rimOffset],
-                [rimOffset, rimOffset]
-            ].forEach(([x, z]) => {
-                const cornerMesh = new THREE.Mesh(cornerGeo, cornerMat.clone());
-                cornerMesh.position.set(x, rimY + 0.02, z); // Top surface at +0.08
-                cornerMesh.castShadow = true;
-                cornerMesh.receiveShadow = true;
-                boardGroup.add(cornerMesh);
-                window.altarCornerMeshes.push(cornerMesh);
+            const leg = 1.28; // Length of each triangle leg along the outer frame edge
+            const cOut = halfOut + 0.01;
+
+            // Define the 4 exact corner triangles in 2D (X, Y) before rotating flat onto (X, Z)
+            const cornerDefs = [
+                // Top-Left Corner
+                [[-cOut, cOut], [-cOut + leg, cOut], [-cOut, cOut - leg]],
+                // Top-Right Corner
+                [[cOut, cOut], [cOut - leg, cOut], [cOut, cOut - leg]],
+                // Bottom-Left Corner
+                [[-cOut, -cOut], [-cOut + leg, -cOut], [-cOut, -cOut + leg]],
+                // Bottom-Right Corner
+                [[cOut, -cOut], [cOut - leg, -cOut], [cOut, -cOut + leg]]
+            ];
+
+            cornerDefs.forEach(pts => {
+                const sh = new THREE.Shape();
+                sh.moveTo(pts[0][0], pts[0][1]);
+                sh.lineTo(pts[1][0], pts[1][1]);
+                sh.lineTo(pts[2][0], pts[2][1]);
+                sh.closePath();
+
+                const cGeo = new THREE.ExtrudeGeometry(sh, { depth: 0.045, bevelEnabled: false });
+                cGeo.rotateX(-Math.PI / 2); // Lies flat on X-Z plane
+                const cMesh = new THREE.Mesh(cGeo, cornerMat.clone());
+                // Sits directly on top of the frame (frame top is at y = +0.02)
+                cMesh.position.y = 0.021;
+                cMesh.castShadow = true;
+                cMesh.receiveShadow = true;
+                boardGroup.add(cMesh);
+                window.altarCornerMeshes.push(cMesh);
             });
 
-            // 4. Algebraic Rank & File Coordinate Labels (A-H, 1-8) sitting right on top of the Altar Frame beams
+            // 4. Algebraic Rank & File Coordinate Labels (A-H, 1-8) Centered on the Altar Frame (y = +0.025)
             const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-            const lGeo = new THREE.PlaneGeometry(0.46, 0.46); lGeo.rotateX(-Math.PI / 2);
+            const labelCenterOff = (halfIn + halfOut) / 2; // 5.00 — dead center of the frame strip!
+            const lGeo = new THREE.PlaneGeometry(0.44, 0.44);
+            lGeo.rotateX(-Math.PI / 2);
+
             for (let i = 0; i < 8; i++) {
                 const pos = i * SQUARE_SIZE - BOARD_OFFSET;
-                const fTex = createCoordTex(files[i].toUpperCase()), rTex = createCoordTex(String(8 - i));
+                const fTex = createCoordTex(files[i].toUpperCase());
+                const rTex = createCoordTex(String(8 - i));
                 const makeLabelMat = (tex) => new THREE.MeshBasicMaterial({
                     map: tex,
                     transparent: true,
@@ -1076,11 +1097,11 @@
                     polygonOffsetFactor: -4
                 });
 
-                // Placed at y = 0.025 (directly on top of the raised Altar Frame beams at y = 0.02)
-                const fs = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fs.position.set(pos, 0.025, rimOffset); boardGroup.add(fs);
-                const fn = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fn.position.set(pos, 0.025, -rimOffset); fn.rotation.y = Math.PI; boardGroup.add(fn);
-                const rw = new THREE.Mesh(lGeo, makeLabelMat(rTex)); rw.position.set(-rimOffset, 0.025, pos); boardGroup.add(rw);
-                const re = new THREE.Mesh(lGeo, makeLabelMat(rTex)); re.position.set(rimOffset, 0.025, pos); boardGroup.add(re);
+                // Frame top is at y = 0.02, so y = 0.026 sits visibly right on top of the frame!
+                const fs = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fs.position.set(pos, 0.026, labelCenterOff); boardGroup.add(fs);
+                const fn = new THREE.Mesh(lGeo, makeLabelMat(fTex)); fn.position.set(pos, 0.026, -labelCenterOff); fn.rotation.y = Math.PI; boardGroup.add(fn);
+                const rw = new THREE.Mesh(lGeo, makeLabelMat(rTex)); rw.position.set(-labelCenterOff, 0.026, pos); boardGroup.add(rw);
+                const re = new THREE.Mesh(lGeo, makeLabelMat(rTex)); re.position.set(labelCenterOff, 0.026, pos); boardGroup.add(re);
             }
 
             // 5. Distinct 64 3D Tiles sitting above the table
@@ -1958,14 +1979,10 @@
             currentSelectedFrameTheme = k;
             isolateCathedralMaterialsOnce();
 
-            // Color the 4 raised Altar Frame border beams around the chessboard
-            if (window.altarFrameBeams) {
-                window.altarFrameBeams.forEach(beam => {
-                    beam.material.color.setHex(t.frame);
-                });
-            }
+            // Color the complete square altar frame border
+            if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.frame);
 
-            // Color the 4 corner blocks on the corners of the Altar Frame
+            // Color the 4 flat photo-frame corner triangles
             if (window.altarCornerMeshes) {
                 window.altarCornerMeshes.forEach(mesh => {
                     mesh.material.color.setHex(t.trim);
