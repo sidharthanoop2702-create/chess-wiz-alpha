@@ -1763,11 +1763,27 @@
             return `chess_wiz_${activeUser}_${prefType}`;
         }
 
+        // Helper to collect the cylinder meshes once and give each its own independent material
+        function ensureSanctuaryMeshesIsolated() {
+            if (!window.sanctuaryTableMeshes || window.sanctuaryTableMeshes.length === 0) {
+                window.sanctuaryTableMeshes = [];
+                scene.traverse(obj => {
+                    if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
+                        // Clone material so the Altar Pedestal and Cathedral Floor never overwrite each other!
+                        obj.material = obj.material.clone();
+                        window.sanctuaryTableMeshes.push(obj);
+                    }
+                });
+            }
+        }
+
+        // 1. BOARD SQUARE THEME -> Only colors the 64 Squares + Background/Floor/Pillars
         window.applyBoardSquareTheme = function(k, playSnd = false) {
             const t = BOARD_THEMES[k];
             if (!t) return;
             currentSelectedBoardTheme = k;
 
+            // Color the 64 chessboard squares
             for (const sq in squareMeshes) {
                 squareMeshes[sq].material.color.setHex(squareMeshes[sq].userData.isLight ? t.light : t.dark);
             }
@@ -1775,27 +1791,16 @@
                 document.getElementById(`theme-board-${id}`)?.classList.toggle('active', id === k);
             });
 
-            if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.floorHex);
-            if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.dark);
-
-            if (!window.sanctuaryTableMeshes || window.sanctuaryTableMeshes.length === 0) {
-                window.sanctuaryTableMeshes = [];
-                scene.traverse(obj => {
-                    if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
-                        window.sanctuaryTableMeshes.push(obj);
-                    }
-                });
-            }
-
+            // Color ONLY the outer Cathedral Floor (36) and Pillars (0.75) — DO NOT touch the Altar Frame!
+            ensureSanctuaryMeshesIsolated();
             window.sanctuaryTableMeshes.forEach(mesh => {
                 const rTop = mesh.geometry.parameters?.radiusTop;
-                if (Math.abs(rTop - 8.8) < 0.1 || Math.abs(rTop - 7.2) < 0.1) {
-                    mesh.material.color.setHex(t.dark);
-                } else if (Math.abs(rTop - 36) < 0.5 || Math.abs(rTop - 0.75) < 0.1) {
+                if (Math.abs(rTop - 36) < 0.5 || Math.abs(rTop - 0.75) < 0.1) {
                     mesh.material.color.setHex(t.floorHex);
                 }
             });
 
+            // Color the 3D Sky, Fog, and HTML Background
             scene.background.setHex(t.bgHex);
             if (scene.fog) scene.fog.color.setHex(t.bgHex);
             document.body.style.backgroundColor = t.cssBg;
@@ -1803,23 +1808,18 @@
             if (playSnd) sound.playSelect();
         };
 
+        // 2. SANCTUARY ALTAR FRAME -> Only colors the Table under the squares + the 4 Corner Triangles
         window.applyBoardFrameTheme = function(k, playSnd = false) {
             const t = FRAME_THEMES[k];
             if (!t) return;
             currentSelectedFrameTheme = k;
 
+            // Color the table directly underneath the 64 squares
             if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.frame);
             if (boardTrimMesh) boardTrimMesh.material.color.setHex(t.trim);
 
-            if (!window.sanctuaryTableMeshes || window.sanctuaryTableMeshes.length === 0) {
-                window.sanctuaryTableMeshes = [];
-                scene.traverse(obj => {
-                    if (obj.isMesh && obj.geometry && obj.geometry.type === 'CylinderGeometry') {
-                        window.sanctuaryTableMeshes.push(obj);
-                    }
-                });
-            }
-
+            // Color ONLY the 4 corner triangles around the altar (8.8 and 7.2 pedestals) — DO NOT touch the Background!
+            ensureSanctuaryMeshesIsolated();
             window.sanctuaryTableMeshes.forEach(mesh => {
                 const rTop = mesh.geometry.parameters?.radiusTop;
                 if (Math.abs(rTop - 8.8) < 0.1) mesh.material.color.setHex(t.frame);
