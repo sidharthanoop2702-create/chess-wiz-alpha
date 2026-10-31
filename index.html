@@ -394,6 +394,13 @@
                             </svg>
                             <span>Obsidian Iron</span>
                         </button>
+                        <button type="button" id="theme-frame-wood" onclick="window.applyBoardFrameTheme('wood', true)" class="menu-option-card rounded-xl p-2.5 text-xs font-semibold text-white flex items-center gap-2">
+                            <svg class="w-4 h-4 rounded-[4px] shrink-0 border border-white/30 pointer-events-none" viewBox="0 0 16 16">
+                                <rect x="0" y="0" width="16" height="16" fill="#5c3a21"/>
+                                <rect x="3" y="3" width="10" height="10" rx="1.5" fill="none" stroke="#d4af37" stroke-width="2.5"/>
+                            </svg>
+                            <span>Arcane Wood</span>
+                        </button>
                     </div>
                 </div>
 
@@ -1872,7 +1879,8 @@
         const FRAME_THEMES = {
             bronze: { frame: 0x262135, trim: 0x9370db, name: 'Cathedral Bronze' },
             gold:   { frame: 0x42331b, trim: 0xfbbf24, name: 'Royal Gold' },
-            iron:   { frame: 0x121216, trim: 0x71717a, name: 'Obsidian Iron' }
+            iron:   { frame: 0x121216, trim: 0x71717a, name: 'Obsidian Iron' },
+            wood:   { frame: 0x5c3a21, trim: 0xd4af37, name: 'Arcane Wood', isWood: true }
         };
 
         const PIECE_THEMES = {
@@ -1973,23 +1981,66 @@
         };
 
         // 2. SANCTUARY ALTAR FRAME -> Colors ONLY the 4 Raised Altar Frame Border Beams + the 4 Corner Blocks
+        
+        // Procedural Wood Grain Texture Generator
+        function createWoodTexture() {
+            const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#5c3a21'; ctx.fillRect(0, 0, 512, 512);
+            ctx.strokeStyle = '#3d2314'; ctx.lineWidth = 3.5;
+            for (let i = 0; i < 45; i++) {
+                ctx.beginPath();
+                let x = Math.random() * 512, y = 0;
+                ctx.moveTo(x, y);
+                while (y < 512) {
+                    y += 12 + Math.random() * 22;
+                    x += (Math.random() - 0.5) * 18;
+                    ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            const tex = new THREE.CanvasTexture(c);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+        const arcaneWoodTex = createWoodTexture();
+
         window.applyBoardFrameTheme = function(k, playSnd = false) {
             const t = FRAME_THEMES[k];
             if (!t) return;
             currentSelectedFrameTheme = k;
             isolateCathedralMaterialsOnce();
 
-            // Color the complete square altar frame border
-            if (boardFrameMesh) boardFrameMesh.material.color.setHex(t.frame);
+            if (boardFrameMesh) {
+                if (t.isWood) {
+                    boardFrameMesh.material.map = arcaneWoodTex;
+                    boardFrameMesh.material.color.setHex(0xffffff);
+                    boardFrameMesh.material.roughness = 0.45;
+                    boardFrameMesh.material.needsUpdate = true;
+                } else {
+                    boardFrameMesh.material.map = null;
+                    boardFrameMesh.material.color.setHex(t.frame);
+                    boardFrameMesh.material.needsUpdate = true;
+                }
+            }
 
-            // Color the 4 flat photo-frame corner triangles
             if (window.altarCornerMeshes) {
                 window.altarCornerMeshes.forEach(mesh => {
-                    mesh.material.color.setHex(t.trim);
+                    if (t.isWood) {
+                        mesh.material.map = arcaneWoodTex;
+                        mesh.material.color.setHex(0xffffff);
+                        mesh.material.roughness = 0.45;
+                        mesh.material.needsUpdate = true;
+                    } else {
+                        mesh.material.map = null;
+                        mesh.material.color.setHex(t.trim);
+                        mesh.material.needsUpdate = true;
+                    }
                 });
             }
 
-            ['bronze', 'gold', 'iron'].forEach(id => {
+            ['bronze', 'gold', 'iron', 'wood'].forEach(id => {
                 document.getElementById(`theme-frame-${id}`)?.classList.toggle('active', id === k);
             });
 
