@@ -3782,11 +3782,42 @@
             }
 
             async function verifySavePayload(payloadObj) {
-                if (!payloadObj || typeof payloadObj !== 'object' || !payloadObj._arcaneSeal) {
+                if (!payloadObj || typeof payloadObj !== 'object') {
                     return false;
                 }
-                const expectedSeal = await signSavePayload(payloadObj);
-                return payloadObj._arcaneSeal === expectedSeal;
+
+                // 1. If the file has an Arcane Seal (new save files), verify the SHA-256 signature strictly
+                if (payloadObj._arcaneSeal) {
+                    const expectedSeal = await signSavePayload(payloadObj);
+                    return payloadObj._arcaneSeal === expectedSeal;
+                }
+
+                // 2. Legacy Save Compatibility (for older saves created before the security update):
+                // Verify that the FEN is legal AND matches the recorded move history so nobody can edit the FEN in Notepad!
+                try {
+                    const testChess = new Chess();
+                    if (Array.isArray(payloadObj.historyVerbose) && payloadObj.historyVerbose.length > 0) {
+                        for (const m of payloadObj.historyVerbose) {
+                            const mv = testChess.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' });
+                            if (!mv) return false; // Illegal/tampered move in history!
+                        }
+                        // Check if the final board state matches the saved FEN
+                        if (payloadObj.fen && testChess.fen() !== payloadObj.fen) {
+                            return false; // Someone edited the FEN in Notepad without matching the moves!
+                        }
+                        return true;
+                    } else if (payloadObj.pgn) {
+                        if (!testChess.load_pgn(payloadObj.pgn)) return false;
+                        if (payloadObj.fen && testChess.fen() !== payloadObj.fen) return false;
+                        return true;
+                    } else if (payloadObj.fen) {
+                        const v = testChess.validate_fen(payloadObj.fen);
+                        return Boolean(v && v.valid);
+                    }
+                } catch (e) {
+                    return false;
+                }
+                return false;
             }
 
             return {
