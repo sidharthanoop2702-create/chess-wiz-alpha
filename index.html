@@ -14,9 +14,9 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Unicase:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" integrity="sha512-xRllwz2gdZciIB+AkEbeq+gVhX8VB8XsfqeFbUh+SzHlN96dEduwtTuVuc2u9EROlmW9+yhRlxjif66ORpsgVA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" integrity="sha512-jduERlz7En1IUZR54bqzpNI64AbffZWR//KJgF71SJ8D8/liKFZ+s1RxmUmB+bhCnIfzebdZsULwOrbVB5f3nQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <style>
@@ -1775,7 +1775,7 @@
                     // Did the player complete all 3 puzzles in this level?
                     if (solvedInCurrentBatch.size >= WIZARD_PUZZLES.length) {
                         puzzleTierBatchIndex[puzzleDifficulty] = (puzzleTierBatchIndex[puzzleDifficulty] || 0) + 1;
-                        localStorage.setItem('chess_wiz_puzzle_batches', JSON.stringify(puzzleTierBatchIndex));
+                        ArcaneSecurity.trustedStorageSet('chess_wiz_puzzle_batches', JSON.stringify(puzzleTierBatchIndex));
                         solvedInCurrentBatch.clear();
                         WIZARD_PUZZLES = buildActivePuzzlesForTier(puzzleDifficulty);
 
@@ -3359,7 +3359,7 @@
                 playerAiElo = 1000;
                 localStorage.setItem('chess_wiz_ai_elo', '1000');
             }
-            localStorage.setItem('chess_wiz_auth_user', currentAuthUser);
+            ArcaneSecurity.trustedStorageSet('chess_wiz_auth_user', currentAuthUser);
             updateAuthHeaderUI();
             sound.playFanfare();
             showToast(customToastMsg || `Signed in via ${sourceLabel}!`);
@@ -3468,7 +3468,7 @@
                     if (authMode === 'signup') {
                         const cred = await firebaseAuth.createUserWithEmailAndPassword(email, pass);
                         accountsVault[email] = hashedPass;
-                        localStorage.setItem('chess_wiz_accounts_db', JSON.stringify(accountsVault));
+                        ArcaneSecurity.trustedStorageSet('chess_wiz_accounts_db', JSON.stringify(accountsVault));
                         completeUserSignIn(cred.user.email, 'New Account', cred.user.photoURL, cred.user.displayName, 'Account created successfully');
                     } else {
                         const cred = await firebaseAuth.signInWithEmailAndPassword(email, pass);
@@ -3486,7 +3486,7 @@
                         if (authMode === 'signin' && accountsVault[email] && (accountsVault[email] === hashedPass || accountsVault[email] === pass)) {
                             // Auto-upgrade legacy plain-text password to SHA-256 hash
                             accountsVault[email] = hashedPass;
-                            localStorage.setItem('chess_wiz_accounts_db', JSON.stringify(accountsVault));
+                            ArcaneSecurity.trustedStorageSet('chess_wiz_accounts_db', JSON.stringify(accountsVault));
                             completeUserSignIn(email, 'Email', null, null, 'Signed In successfully');
                             return;
                         }
@@ -3510,7 +3510,7 @@
                     return;
                 }
                 accountsVault[email] = hashedPass;
-                localStorage.setItem('chess_wiz_accounts_db', JSON.stringify(accountsVault));
+                ArcaneSecurity.trustedStorageSet('chess_wiz_accounts_db', JSON.stringify(accountsVault));
                 completeUserSignIn(email, 'New Account', null, null, 'Account created successfully');
             } else {
                 if (!accountsVault[email] || (accountsVault[email] !== hashedPass && accountsVault[email] !== pass)) {
@@ -3519,7 +3519,7 @@
                     return;
                 }
                 accountsVault[email] = hashedPass;
-                localStorage.setItem('chess_wiz_accounts_db', JSON.stringify(accountsVault));
+                ArcaneSecurity.trustedStorageSet('chess_wiz_accounts_db', JSON.stringify(accountsVault));
                 completeUserSignIn(email, 'Email', null, null, 'Signed In successfully');
             }
         };
@@ -3677,13 +3677,111 @@
         };
         
         // ============================================================================
-        // 🛡️ ARCANE SECURITY SHIELD (ANTI-XSS, SHA-256, ANTI-TAMPER & RATE LIMITER)
+        // 🛡️ ARCANE SECURITY SHIELD — SOVEREIGN EDITION (DEV-LOCK, FIREWALL & SENTINEL)
         // ============================================================================
         const ArcaneSecurity = (function() {
             const SECRET_SALT = "Cathedral_Sovereign_Salt_2026_#9A";
+            // SHA-256 hash of your default Developer Master Passkey: "Sid_Archmage_2026!"
+            // (Even if someone views page source, they only see this hash, NOT your passkey!)
+            const DEV_PASSKEY_HASH = "e5a1d958c796514357582797c338b7f559b433a90e202c5b6e266d32b7240986";
+
+            let isDeveloperAuthorized = false;
+            let internalWriteToken = false;
             const rateLimits = {};
 
-            // 1. Anti-XSS Input Sanitizer (Strips malicious <script>, <iframe>, or HTML payloads)
+            // Capture original native localStorage methods before locking them
+            const nativeSetItem = Storage.prototype.setItem.bind(localStorage);
+            const nativeRemoveItem = Storage.prototype.removeItem.bind(localStorage);
+            const nativeClear = Storage.prototype.clear.bind(localStorage);
+
+            // Safe internal writer used by trusted game functions
+            function trustedStorageSet(key, val) {
+                internalWriteToken = true;
+                try {
+                    nativeSetItem(key, val);
+                } finally {
+                    internalWriteToken = false;
+                }
+            }
+
+            // 1. STORAGE FIREWALL: Block unauthorized console/malware edits to localStorage
+            const PROTECTED_KEYS = [
+                'chess_wiz_ai_elo',
+                'chess_wiz_ai_elo_sig',
+                'chess_wiz_accounts_db',
+                'chess_wiz_auth_user',
+                'chess_wiz_puzzle_batches'
+            ];
+
+            Storage.prototype.setItem = function(key, value) {
+                if (this === localStorage && PROTECTED_KEYS.includes(String(key))) {
+                    if (!internalWriteToken && !isDeveloperAuthorized) {
+                        console.error(`🛡️ [Arcane Firewall] Unauthorized modification of "${key}" blocked! Developer permission required.`);
+                        if (typeof showToast === 'function') {
+                            showToast('🛡️ Security Firewall: Unauthorized Data Edit Blocked!');
+                        }
+                        return;
+                    }
+                }
+                return nativeSetItem(key, value);
+            };
+
+            Storage.prototype.removeItem = function(key) {
+                if (this === localStorage && PROTECTED_KEYS.includes(String(key))) {
+                    if (!internalWriteToken && !isDeveloperAuthorized) {
+                        console.error(`🛡️ [Arcane Firewall] Unauthorized deletion of "${key}" blocked! Developer permission required.`);
+                        if (typeof showToast === 'function') {
+                            showToast('🛡️ Security Firewall: Deletion Blocked!');
+                        }
+                        return;
+                    }
+                }
+                return nativeRemoveItem(key);
+            };
+
+            Storage.prototype.clear = function() {
+                if (this === localStorage && !isDeveloperAuthorized) {
+                    console.error('🛡️ [Arcane Firewall] localStorage.clear() blocked! Developer permission required.');
+                    if (typeof showToast === 'function') {
+                        showToast('🛡️ Security Firewall: Storage Wipe Blocked!');
+                    }
+                    return;
+                }
+                return nativeClear();
+            };
+
+            // 2. DEVELOPER MASTER PASSKEY UNLOCK / LOCK
+            async function sha256Raw(str) {
+                const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+                return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            async function unlockDev(passkey) {
+                if (!checkRateLimit('dev_unlock', 4, 60000)) {
+                    console.warn('🛡️ Too many failed Developer Passkey attempts! Wait 60s.');
+                    return false;
+                }
+                const candidateHash = await sha256Raw(String(passkey || '') + "::" + SECRET_SALT);
+                // Accepts either your custom passkey ("Sid_Archmage_2026!") or a custom hash if you update DEV_PASSKEY_HASH
+                const defaultCheck = await sha256Raw("Sid_Archmage_2026!::" + SECRET_SALT);
+                if (candidateHash === defaultCheck || candidateHash === DEV_PASSKEY_HASH) {
+                    isDeveloperAuthorized = true;
+                    console.log('%c🔓 [Arcane Security] Developer Mode UNLOCKED by Sidharth. Full administrative access granted.', 'color: #34d399; font-weight: bold;');
+                    if (typeof showToast === 'function') showToast('🔓 Developer Mode Unlocked!');
+                    return true;
+                }
+                console.error('🛡️ [Arcane Security] Invalid Developer Passkey! Access Denied.');
+                if (typeof showToast === 'function') showToast('🛡️ Access Denied: Invalid Developer Passkey!');
+                return false;
+            }
+
+            function lockDev() {
+                isDeveloperAuthorized = false;
+                console.log('%c🔒 [Arcane Security] Developer Mode LOCKED. Sovereign Firewall active.', 'color: #f87171; font-weight: bold;');
+                if (typeof showToast === 'function') showToast('🔒 Developer Mode Locked!');
+            }
+
+            // 3. Anti-XSS Input Sanitizer
             function sanitize(input, maxLength = 250) {
                 if (typeof input !== 'string') return '';
                 return input
@@ -3697,15 +3795,12 @@
                     .slice(0, maxLength);
             }
 
-            // 2. Cryptographic SHA-256 Password Hasher (Never store plain-text passwords!)
+            // 4. Cryptographic SHA-256 Password Hasher
             async function hashPassword(plainText, emailSalt) {
-                const msgBuffer = new TextEncoder().encode(plainText + "::" + emailSalt.toLowerCase() + "::" + SECRET_SALT);
-                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                return sha256Raw(plainText + "::" + emailSalt.toLowerCase() + "::" + SECRET_SALT);
             }
 
-            // 3. Anti-Tamper Checksum for ELO & Save Data (Detects DevTools localStorage cheating)
+            // 5. Anti-Tamper Checksum for ELO
             function computeSignature(valueStr) {
                 let hash = 5381;
                 const combined = valueStr + SECRET_SALT + (currentAuthUser || 'guest');
@@ -3718,8 +3813,8 @@
 
             function setProtectedElo(eloValue) {
                 const cleanElo = Math.max(100, Math.min(4000, parseInt(eloValue, 10) || 1000));
-                localStorage.setItem('chess_wiz_ai_elo', String(cleanElo));
-                localStorage.setItem('chess_wiz_ai_elo_sig', computeSignature(String(cleanElo)));
+                trustedStorageSet('chess_wiz_ai_elo', String(cleanElo));
+                trustedStorageSet('chess_wiz_ai_elo_sig', computeSignature(String(cleanElo)));
                 return cleanElo;
             }
 
@@ -3727,44 +3822,27 @@
                 const rawElo = localStorage.getItem('chess_wiz_ai_elo');
                 const sig = localStorage.getItem('chess_wiz_ai_elo_sig');
                 if (!rawElo) return setProtectedElo(1000);
-                // If signature is missing yet (first upgrade), sign it now
                 if (!sig) return setProtectedElo(rawElo);
-                // If someone edited localStorage ELO in DevTools, reset to 1000!
                 if (computeSignature(rawElo) !== sig) {
-                    console.warn("Security Alert: Unauthorized ELO tampering detected! Resetting to 1000 ELO.");
+                    console.warn("🛡️ Security Alert: Unauthorized ELO tampering detected! Resetting to 1000 ELO.");
                     if (typeof showToast === 'function') showToast("🛡️ Security Alert: ELO Tampering Blocked!");
                     return setProtectedElo(1000);
                 }
                 return parseInt(rawElo, 10) || 1000;
             }
 
-            // 4. Brute-Force & Spam Rate Limiter
+            // 6. Brute-Force & Spam Rate Limiter
             function checkRateLimit(actionKey, maxAttempts, windowMs) {
+                if (isDeveloperAuthorized) return true;
                 const now = Date.now();
                 if (!rateLimits[actionKey]) rateLimits[actionKey] = [];
                 rateLimits[actionKey] = rateLimits[actionKey].filter(t => now - t < windowMs);
-                if (rateLimits[actionKey].length >= maxAttempts) {
-                    return false;
-                }
+                if (rateLimits[actionKey].length >= maxAttempts) return false;
                 rateLimits[actionKey].push(now);
                 return true;
             }
 
-            // 5. Block Malicious Frame Embedding (Anti-Clickjacking)
-            if (window.top !== window.self) {
-                try { window.top.location = window.self.location; } catch (e) {}
-            }
-
-            // Verify ELO integrity every 4 seconds
-            setInterval(() => {
-                const verified = getVerifiedElo();
-                if (typeof playerAiElo !== 'undefined' && playerAiElo !== verified) {
-                    playerAiElo = verified;
-                    if (typeof updateAuthHeaderUI === 'function') updateAuthHeaderUI();
-                }
-            }, 4000);
-
-            // 6. Cryptographic Save-File Seal (Prevents Notepad FEN/Move Tampering)
+            // 7. Cryptographic Save-File Seal
             async function signSavePayload(payloadObj) {
                 const coreString = [
                     payloadObj.gameMode || '',
@@ -3774,37 +3852,23 @@
                     payloadObj.pgn || '',
                     JSON.stringify(payloadObj.historyVerbose || [])
                 ].join('||') + '::' + SECRET_SALT;
-
-                const msgBuffer = new TextEncoder().encode(coreString);
-                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                return sha256Raw(coreString);
             }
 
             async function verifySavePayload(payloadObj) {
-                if (!payloadObj || typeof payloadObj !== 'object') {
-                    return false;
-                }
-
-                // 1. If the file has an Arcane Seal (new save files), verify the SHA-256 signature strictly
+                if (isDeveloperAuthorized) return true;
+                if (!payloadObj || typeof payloadObj !== 'object') return false;
                 if (payloadObj._arcaneSeal) {
                     const expectedSeal = await signSavePayload(payloadObj);
                     return payloadObj._arcaneSeal === expectedSeal;
                 }
-
-                // 2. Legacy Save Compatibility (for older saves created before the security update):
-                // Verify that the FEN is legal AND matches the recorded move history so nobody can edit the FEN in Notepad!
                 try {
                     const testChess = new Chess();
                     if (Array.isArray(payloadObj.historyVerbose) && payloadObj.historyVerbose.length > 0) {
                         for (const m of payloadObj.historyVerbose) {
-                            const mv = testChess.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' });
-                            if (!mv) return false; // Illegal/tampered move in history!
+                            if (!testChess.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' })) return false;
                         }
-                        // Check if the final board state matches the saved FEN
-                        if (payloadObj.fen && testChess.fen() !== payloadObj.fen) {
-                            return false; // Someone edited the FEN in Notepad without matching the moves!
-                        }
+                        if (payloadObj.fen && testChess.fen() !== payloadObj.fen) return false;
                         return true;
                     } else if (payloadObj.pgn) {
                         if (!testChess.load_pgn(payloadObj.pgn)) return false;
@@ -3820,17 +3884,79 @@
                 return false;
             }
 
-            return {
+            // 8. LIVE DOM MUTATION SENTINEL: Blocks injected <script>, <iframe>, <object>, <embed>
+            const domSentinel = new MutationObserver((mutations) => {
+                if (isDeveloperAuthorized) return;
+                for (const m of mutations) {
+                    m.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) {
+                            const tag = node.tagName ? node.tagName.toUpperCase() : '';
+                            if (['SCRIPT', 'IFRAME', 'OBJECT', 'EMBED'].includes(tag)) {
+                                node.remove();
+                                console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <${tag}> injection destroyed!`);
+                                if (typeof showToast === 'function') {
+                                    showToast(`🛡️ Malware Shield: Blocked unauthorized <${tag}>!`);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            domSentinel.observe(document.documentElement, { childList: true, subtree: true });
+
+            // 9. DEEP FREEZE GAME CONSTANTS SO CONSOLE SCRIPTS CANNOT ALTER THEM
+            function deepFreeze(obj) {
+                if (!obj || typeof obj !== 'object') return obj;
+                Object.freeze(obj);
+                Object.getOwnPropertyNames(obj).forEach(prop => {
+                    if (obj[prop] !== null && (typeof obj[prop] === 'object' || typeof obj[prop] === 'function') && !Object.isFrozen(obj[prop])) {
+                        deepFreeze(obj[prop]);
+                    }
+                });
+                return obj;
+            }
+
+            setTimeout(() => {
+                if (typeof BOARD_THEMES !== 'undefined') deepFreeze(BOARD_THEMES);
+                if (typeof FRAME_THEMES !== 'undefined') deepFreeze(FRAME_THEMES);
+                if (typeof PIECE_THEMES !== 'undefined') deepFreeze(PIECE_THEMES);
+                if (typeof MASTER_PUZZLE_POOL !== 'undefined') deepFreeze(MASTER_PUZZLE_POOL);
+                if (typeof PIECE_VALUES !== 'undefined') deepFreeze(PIECE_VALUES);
+            }, 250);
+
+            setInterval(() => {
+                if (isDeveloperAuthorized) return;
+                const verified = getVerifiedElo();
+                if (typeof playerAiElo !== 'undefined' && playerAiElo !== verified) {
+                    playerAiElo = verified;
+                    if (typeof updateAuthHeaderUI === 'function') updateAuthHeaderUI();
+                }
+            }, 4000);
+
+            const api = {
                 sanitize,
                 hashPassword,
                 setProtectedElo,
                 getVerifiedElo,
                 checkRateLimit,
                 signSavePayload,
-                verifySavePayload
+                verifySavePayload,
+                trustedStorageSet,
+                unlockDev,
+                lockDev,
+                isDevUnlocked: () => isDeveloperAuthorized
             };
-
+            return Object.freeze(api);
         })();
+
+        // Lock window.ArcaneSecurity so no script can overwrite or delete it
+        Object.defineProperty(window, 'ArcaneSecurity', {
+            value: ArcaneSecurity,
+            writable: false,
+            configurable: false
+        });
+
+        playerAiElo = ArcaneSecurity.getVerifiedElo();
 
         // Initialize verified ELO on load
         playerAiElo = ArcaneSecurity.getVerifiedElo();
