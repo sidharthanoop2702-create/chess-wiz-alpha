@@ -7,7 +7,7 @@
     <!-- Arcane Security Shield: Content Security Policy & Anti-Clickjacking -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://formsubmit.co; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.gstatic.com https://cdnjs.cloudflare.com https://formsubmit.co;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chess Wiz — The Arcane Sanctuary</title>
     <script src="https://cdn.tailwindcss.com">
@@ -3704,13 +3704,11 @@
                 }
             }
 
-            // 1. STORAGE FIREWALL: Block unauthorized console/malware edits to localStorage
+            // 1. STORAGE FIREWALL: Block unauthorized console/malware edits to ELO & Accounts Vault
             const PROTECTED_KEYS = [
                 'chess_wiz_ai_elo',
                 'chess_wiz_ai_elo_sig',
-                'chess_wiz_accounts_db',
-                'chess_wiz_auth_user',
-                'chess_wiz_puzzle_batches'
+                'chess_wiz_accounts_db'
             ];
 
             Storage.prototype.setItem = function(key, value) {
@@ -3736,7 +3734,7 @@
                         return;
                     }
                 }
-                return nativeRemoveItem(key);
+                return nativeRemoveItem(key, value);
             };
 
             Storage.prototype.clear = function() {
@@ -3762,7 +3760,6 @@
                     return false;
                 }
                 const candidateHash = await sha256Raw(String(passkey || '') + "::" + SECRET_SALT);
-                // Accepts either your custom passkey ("Sid_Archmage_2026!") or a custom hash if you update DEV_PASSKEY_HASH
                 const defaultCheck = await sha256Raw("Sid_Archmage_2026!::" + SECRET_SALT);
                 if (candidateHash === defaultCheck || candidateHash === DEV_PASSKEY_HASH) {
                     isDeveloperAuthorized = true;
@@ -3800,10 +3797,10 @@
                 return sha256Raw(plainText + "::" + emailSalt.toLowerCase() + "::" + SECRET_SALT);
             }
 
-            // 5. Anti-Tamper Checksum for ELO
+            // 5. Anti-Tamper Checksum for ELO (Stable across page refreshes & login states!)
             function computeSignature(valueStr) {
                 let hash = 5381;
-                const combined = valueStr + SECRET_SALT + (currentAuthUser || 'guest');
+                const combined = String(valueStr).trim() + "::" + SECRET_SALT;
                 for (let i = 0; i < combined.length; i++) {
                     hash = ((hash << 5) + hash) + combined.charCodeAt(i);
                     hash = hash & hash;
@@ -3822,6 +3819,7 @@
                 const rawElo = localStorage.getItem('chess_wiz_ai_elo');
                 const sig = localStorage.getItem('chess_wiz_ai_elo_sig');
                 if (!rawElo) return setProtectedElo(1000);
+                // Auto-seal if signature is from an older format or not set yet
                 if (!sig) return setProtectedElo(rawElo);
                 if (computeSignature(rawElo) !== sig) {
                     console.warn("🛡️ Security Alert: Unauthorized ELO tampering detected! Resetting to 1000 ELO.");
