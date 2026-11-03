@@ -1749,11 +1749,14 @@
                         rating = 'Brilliant'; badgeStyle = 'bg-cyan-400/25 text-cyan-200 border-cyan-300/50'; symbol = '!!';
                     } else if (isBestPlayed) {
                         rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
-                    } else if (cpLoss <= 65) {
+                    } else if (cpLoss <= 95) {
+                        // Restored original Okay threshold
                         rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
-                    } else if (cpLoss <= 180) {
+                    } else if (cpLoss <= 240) {
+                        // Restored original Mistake threshold
                         rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                     } else {
+                        // Anything worse than 240 is a Blunder
                         rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
                     }
 
