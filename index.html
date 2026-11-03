@@ -4101,7 +4101,7 @@
                 return false;
             }
 
-            // 8. LIVE DOM MUTATION SENTINEL (With Firebase Whitelist)
+            // 8. LIVE DOM MUTATION SENTINEL (With Firebase Grace Period)
             const domSentinel = new MutationObserver((mutations) => {
                 if (isDeveloperAuthorized) return;
                 for (const m of mutations) {
@@ -4114,13 +4114,16 @@
                                 node.remove();
                                 console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <${tag}> injection destroyed!`);
                             } 
-                            // Check iframes: Allow ONLY official Firebase Auth iframes
+                            // Give IFRAMEs a 100ms grace period to set their secure URL
                             else if (tag === 'IFRAME') {
-                                if (node.src && node.src.includes('firebaseapp.com')) {
-                                    return; // Allow Firebase to do its job!
-                                }
-                                node.remove();
-                                console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <IFRAME> injection destroyed!`);
+                                setTimeout(() => {
+                                    const src = node.src || '';
+                                    if (src.includes('firebaseapp.com') || src.includes('google.com') || src.includes('googleapis.com')) {
+                                        return; // Official Auth Iframe - Allow it!
+                                    }
+                                    node.remove();
+                                    console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <IFRAME> injection destroyed!`);
+                                }, 100);
                             }
                         }
                     });
