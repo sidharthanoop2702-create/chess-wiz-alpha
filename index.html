@@ -4101,19 +4101,26 @@
                 return false;
             }
 
-            // 8. LIVE DOM MUTATION SENTINEL: Blocks injected <script>, <iframe>, <object>, <embed>
+            // 8. LIVE DOM MUTATION SENTINEL (With Firebase Whitelist)
             const domSentinel = new MutationObserver((mutations) => {
                 if (isDeveloperAuthorized) return;
                 for (const m of mutations) {
                     m.addedNodes.forEach((node) => {
                         if (node.nodeType === 1) {
                             const tag = node.tagName ? node.tagName.toUpperCase() : '';
-                            if (['SCRIPT', 'IFRAME', 'OBJECT', 'EMBED'].includes(tag)) {
+                            
+                            // Immediately destroy scripts, objects, and embeds
+                            if (['SCRIPT', 'OBJECT', 'EMBED'].includes(tag)) {
                                 node.remove();
                                 console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <${tag}> injection destroyed!`);
-                                if (typeof showToast === 'function') {
-                                    showToast(`🛡️ Malware Shield: Blocked unauthorized <${tag}>!`);
+                            } 
+                            // Check iframes: Allow ONLY official Firebase Auth iframes
+                            else if (tag === 'IFRAME') {
+                                if (node.src && node.src.includes('firebaseapp.com')) {
+                                    return; // Allow Firebase to do its job!
                                 }
+                                node.remove();
+                                console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <IFRAME> injection destroyed!`);
                             }
                         }
                     });
