@@ -3581,44 +3581,62 @@
 
         function completeUserSignIn(email, sourceLabel, providerPhotoUrl = null, providerName = null, customToastMsg = null) {
             currentAuthUser = email;
-            if (!localStorage.getItem('chess_wiz_display_name')) {
-                currentDisplayName = providerName || email.split('@')[0];
+            localStorage.setItem('chess_wiz_auth_user', currentAuthUser);
+
+            // Always apply Google/Provider Display Name if provided
+            if (providerName) {
+                currentDisplayName = providerName;
+                localStorage.setItem('chess_wiz_display_name', currentDisplayName);
+            } else if (!localStorage.getItem('chess_wiz_display_name')) {
+                currentDisplayName = email.split('@')[0];
                 localStorage.setItem('chess_wiz_display_name', currentDisplayName);
             }
-            if (providerPhotoUrl && !localStorage.getItem('chess_wiz_avatar')) {
+
+            // Always apply Google/Provider Profile Picture if provided
+            if (providerPhotoUrl) {
                 currentAvatarUrl = providerPhotoUrl;
                 localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
             }
+
             if (!localStorage.getItem('chess_wiz_ai_elo')) {
-                playerAiElo = ArcaneSecurity.setProtectedElo(1000);
+                playerAiElo = typeof ArcaneSecurity !== 'undefined' ? ArcaneSecurity.setProtectedElo(1000) : 1000;
             }
-            ArcaneSecurity.trustedStorageSet('chess_wiz_auth_user', currentAuthUser);
+
             updateAuthHeaderUI();
             sound.playFanfare();
-            showToast(customToastMsg || `Signed in via ${sourceLabel}!`);
+            showToast(customToastMsg || `Signed in as ${currentDisplayName}!`);
 
             const modal = document.getElementById('auth-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            showProfileEditorView();
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                showProfileEditorView();
+            }
 
-            // 👇 THIS ENSURES THE THEMES LOAD FOR THIS SPECIFIC ACCOUNT IMMEDIATELY 👇
-            loadAccountThemePreferences();
-            
+            window.loadAccountThemePreferences();
             syncGameToCloud(true, chess.game_over());
         }
 
-        // Keep session synced with Firebase Auth state
+        // Automatically sync when Firebase completes Popup OR Redirect Sign-In
         if (firebaseAuth) {
+            firebaseAuth.getRedirectResult().then((result) => {
+                if (result && result.user && result.user.email) {
+                    const u = result.user;
+                    completeUserSignIn(u.email, 'Google', u.photoURL, u.displayName);
+                }
+            }).catch((err) => {
+                console.warn("Redirect check:", err);
+            });
+
             firebaseAuth.onAuthStateChanged((user) => {
                 if (user && user.email) {
                     currentAuthUser = user.email;
                     localStorage.setItem('chess_wiz_auth_user', user.email);
-                    if (user.displayName && !localStorage.getItem('chess_wiz_display_name')) {
+                    if (user.displayName) {
                         currentDisplayName = user.displayName;
                         localStorage.setItem('chess_wiz_display_name', currentDisplayName);
                     }
-                    if (user.photoURL && !localStorage.getItem('chess_wiz_avatar')) {
+                    if (user.photoURL) {
                         currentAvatarUrl = user.photoURL;
                         localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
                     }
@@ -3757,22 +3775,40 @@
             }
         };
 
-        // 1. DEDICATED REAL FIREBASE GOOGLE AUTH (Uses actual Firebase popup)
+        // Dedicated Real Firebase Google Sign-In (Popup with Redirect Fallback)
         window.handleGoogleFirebaseSignIn = async function() {
             sound.playSelect();
+
             if (typeof firebase === 'undefined' || !firebaseAuth) {
-                alert('Firebase is not initialized.');
+                alert('Firebase is not initialized. Check your internet connection.');
                 return;
             }
+
             try {
                 const authProvider = new firebase.auth.GoogleAuthProvider();
                 authProvider.setCustomParameters({ prompt: 'select_account' });
-                
-                // Use redirect instead of popup to bypass strict browser storage blocks
-                await firebaseAuth.signInWithRedirect(authProvider);
+
+                // Use Popup first so it signs in right inside the window without losing state
+                const result = await firebaseAuth.signInWithPopup(authProvider);
+                if (result && result.user) {
+                    const user = result.user;
+                    completeUserSignIn(
+                        user.email,
+                        'Google',
+                        user.photoURL,
+                        user.displayName,
+                        `Welcome, ${user.displayName || user.email}!`
+                    );
+                }
             } catch (err) {
-                console.error("Google Auth Error:", err);
-                alert('Google Sign-In Error: ' + err.message);
+                console.error("Google Auth Popup Error:", err);
+                // If the browser blocks the popup or storage, fallback to Redirect automatically
+                if (err.code === 'auth/operation-not-supported-in-this-environment' || err.code === 'auth/popup-blocked') {
+                    const authProvider = new firebase.auth.GoogleAuthProvider();
+                    await firebaseAuth.signInWithRedirect(authProvider);
+                } else if (err.code !== 'auth/popup-closed-by-user') {
+                    showToast('Google Sign-In failed: ' + (err.message || err.code));
+                }
             }
         };
 
@@ -4101,29 +4137,47 @@
                 return false;
             }
 
-            // 8. LIVE DOM MUTATION SENTINEL (With Firebase Grace Period)
+            // 8. LIVE DOM MUTATION SENTINEL (Allows Official Google & Firebase Auth Scripts/Iframes)
             const domSentinel = new MutationObserver((mutations) => {
                 if (isDeveloperAuthorized) return;
                 for (const m of mutations) {
                     m.addedNodes.forEach((node) => {
                         if (node.nodeType === 1) {
                             const tag = node.tagName ? node.tagName.toUpperCase() : '';
-                            
-                            // Immediately destroy scripts, objects, and embeds
-                            if (['SCRIPT', 'OBJECT', 'EMBED'].includes(tag)) {
+                            const src = (node.src || '').toLowerCase();
+
+                            // Allow official Google / Firebase authentication scripts & iframes
+                            const isTrustedGoogleOrFirebase =
+                                src.includes('google.com') ||
+                                src.includes('googleapis.com') ||
+                                src.includes('gstatic.com') ||
+                                src.includes('firebaseapp.com') ||
+                                src.includes('firebaseio.com');
+
+                            if (tag === 'SCRIPT') {
+                                // Only block external scripts that are NOT from Google/Firebase
+                                if (src && !isTrustedGoogleOrFirebase && !src.startsWith(window.location.origin)) {
+                                    node.remove();
+                                    console.error(`🛡️ [Arcane DOM Sentinel] Blocked untrusted <SCRIPT>: ${src}`);
+                                }
+                            } else if (['OBJECT', 'EMBED'].includes(tag)) {
                                 node.remove();
-                                console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <${tag}> injection destroyed!`);
-                            } 
-                            // Give IFRAMEs a 100ms grace period to set their secure URL
-                            else if (tag === 'IFRAME') {
+                                console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <${tag}> destroyed!`);
+                            } else if (tag === 'IFRAME') {
                                 setTimeout(() => {
-                                    const src = node.src || '';
-                                    if (src.includes('firebaseapp.com') || src.includes('google.com') || src.includes('googleapis.com')) {
-                                        return; // Official Auth Iframe - Allow it!
+                                    const iframeSrc = (node.src || '').toLowerCase();
+                                    if (
+                                        !iframeSrc ||
+                                        iframeSrc === 'about:blank' ||
+                                        iframeSrc.includes('firebaseapp.com') ||
+                                        iframeSrc.includes('google.com') ||
+                                        iframeSrc.includes('googleapis.com')
+                                    ) {
+                                        return; // Official Auth Iframe — Let it work!
                                     }
                                     node.remove();
-                                    console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <IFRAME> injection destroyed!`);
-                                }, 100);
+                                    console.error(`🛡️ [Arcane DOM Sentinel] Unauthorized <IFRAME> destroyed!`);
+                                }, 150);
                             }
                         }
                     });
@@ -4369,7 +4423,7 @@
                 </div>
 
                 <div class="space-y-2 flex flex-col items-center">
-                    <button type="button" onclick="alert('Button is clickable!'); handleGoogleFirebaseSignIn()" class="w-[210px] md3-btn !h-8 !justify-start !px-3 !bg-white/10 hover:!bg-white/15 border border-white/15 text-xs font-semibold text-white gap-2">
+                    <button type="button" onclick="handleGoogleFirebaseSignIn()" class="w-[210px] md3-btn !h-8 !justify-start !px-3 !bg-white/10 hover:!bg-white/15 border border-white/15 text-xs font-semibold text-white gap-2">
                         <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.1 8.9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.7s.2-2 .4-2.7L1.6 6.4C.6 8.4 0 10.6 0 13s.6 4.6 1.6 6.6l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5.3L1.6 15.6C3.5 19.4 7.4 23 12 23z"/></svg>
                         <span>Sign in with Google</span>
                     </button>
