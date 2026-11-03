@@ -111,7 +111,8 @@
             <div class="flex items-center justify-between pb-5 mb-5 border-b border-white/10 relative z-10 gap-3">
                 <div class="w-10"></div> <!-- Spacer for balance -->
                 
-                <div class="text-center">
+                <!-- Hidden Trigger: Tap 7 times to open Dev Dashboard -->
+                <div class="text-center cursor-pointer" onclick="handleSecretLogoClick()">
                     <!-- Modern Arcane Sovereign Crown Logo (Matches Wizard Title Gradient & Glow) -->
                     <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-b from-[#171226] via-[#0f0b1a] to-[#090710] flex items-center justify-center mx-auto mb-3 shadow-[0_8px_30px_rgba(0,0,0,0.7),0_0_25px_rgba(168,85,247,0.22)] border border-amber-300/35 relative overflow-hidden group">
                         <!-- Subtle Arcane Halo Backlight -->
@@ -785,6 +786,47 @@
                 <button type="button" onclick="quitCurrentGameToStartMenu()" class="w-full md3-btn !h-10 !text-xs !bg-rose-500/20 hover:!bg-rose-500/35 border border-rose-400/35 text-rose-200 font-semibold">
                     <span class="material-symbols-rounded !text-base text-rose-300">exit_to_app</span>
                     <span>Quit Game</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🛡️ HIDDEN DEVELOPER DASHBOARD MODAL -->
+    <div id="dev-dashboard-modal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="md3-surface rounded-3xl p-6 max-w-sm w-full border border-emerald-400/50 shadow-[0_0_40px_rgba(52,211,153,0.2)] relative text-left">
+            <button type="button" onclick="closeDevDashboard()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/70 hover:text-white">
+                <span class="material-symbols-rounded !text-base">close</span>
+            </button>
+            
+            <div class="flex items-center gap-2.5 mb-5 border-b border-white/10 pb-3">
+                <span class="material-symbols-rounded text-emerald-400 !text-3xl">admin_panel_settings</span>
+                <div>
+                    <h3 class="font-gothic text-lg font-bold text-white">Sovereign Command</h3>
+                    <p class="text-[10px] text-emerald-200/70 uppercase tracking-widest">Developer Dashboard</p>
+                </div>
+            </div>
+
+            <!-- ELO Management -->
+            <div class="mb-4 bg-black/40 p-3 rounded-2xl border border-white/5">
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-2">Override Local ELO</label>
+                <div class="flex gap-2">
+                    <input type="number" id="dev-elo-input" class="flex-1 h-9 px-3 rounded-xl bg-white/5 border border-white/15 text-xs text-white outline-none focus:border-emerald-400" />
+                    <button type="button" onclick="adminSetElo()" class="md3-btn !bg-emerald-500/20 hover:!bg-emerald-500/30 text-emerald-200 !h-9 !px-3 !text-xs border border-emerald-400/30">Update</button>
+                </div>
+            </div>
+
+            <!-- Account Vault Management -->
+            <div class="bg-black/40 p-3 rounded-2xl border border-white/5 mb-2">
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-purple-200/70 mb-2">Local Accounts Vault</label>
+                <div id="dev-accounts-list" class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-white/10">
+                <button type="button" onclick="lockAndExitDev()" class="w-full md3-btn !h-10 !text-xs !bg-rose-500/20 hover:!bg-rose-500/35 border border-rose-400/35 text-rose-200 font-semibold">
+                    <span class="material-symbols-rounded !text-base text-rose-300">lock</span>
+                    <span>Lock &amp; Exit Sovereign Mode</span>
                 </button>
             </div>
         </div>
@@ -3196,6 +3238,105 @@
             if (typeof updateKingBubblesScreenPosition === 'function') updateKingBubblesScreenPosition();
 
             renderer.render(scene, camera);
+        }
+
+        // ============================================================================
+        // 🛠️ HIDDEN SOVEREIGN DASHBOARD LOGIC (7-Tap Trigger)
+        // ============================================================================
+        let secretLogoClicks = 0;
+        let secretLogoTimer = null;
+
+        window.handleSecretLogoClick = async function() {
+            secretLogoClicks++;
+            clearTimeout(secretLogoTimer);
+            
+            // Reset counter if taps aren't fast enough
+            secretLogoTimer = setTimeout(() => { secretLogoClicks = 0; }, 1200);
+
+            if (secretLogoClicks >= 7) {
+                secretLogoClicks = 0;
+                sound.playFanfare();
+                
+                if (ArcaneSecurity.isDevUnlocked()) {
+                    openDevDashboard();
+                } else {
+                    const pk = prompt("Enter Sovereign Developer Passkey:");
+                    if (pk && await ArcaneSecurity.unlockDev(pk)) {
+                        openDevDashboard();
+                    }
+                }
+            }
+        };
+
+        window.openDevDashboard = function() {
+            if (!ArcaneSecurity.isDevUnlocked()) return;
+            document.getElementById('dev-elo-input').value = playerAiElo;
+            renderAdminAccountsList();
+            
+            const modal = document.getElementById('dev-dashboard-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeDevDashboard = function() {
+            const modal = document.getElementById('dev-dashboard-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            sound.playSelect();
+        };
+
+        window.lockAndExitDev = function() {
+            ArcaneSecurity.lockDev();
+            closeDevDashboard();
+        };
+
+        window.adminSetElo = function() {
+            if (!ArcaneSecurity.isDevUnlocked()) return;
+            const newElo = parseInt(document.getElementById('dev-elo-input').value, 10);
+            if (!isNaN(newElo)) {
+                playerAiElo = ArcaneSecurity.setProtectedElo(newElo);
+                if (typeof updateAuthHeaderUI === 'function') updateAuthHeaderUI();
+                showToast(`🛡️ Developer Override: ELO set to ${playerAiElo}`);
+                sound.playSelect();
+            }
+        };
+
+        window.adminDeleteAccount = function(email) {
+            if (!ArcaneSecurity.isDevUnlocked()) return;
+            if (!confirm(`Are you sure you want to permanently delete the local account data for ${email}?`)) return;
+            
+            const accountsVault = JSON.parse(localStorage.getItem('chess_wiz_accounts_db') || '{}');
+            delete accountsVault[email];
+            
+            // Use the trusted internal setter to bypass the firewall
+            ArcaneSecurity.trustedStorageSet('chess_wiz_accounts_db', JSON.stringify(accountsVault));
+            
+            showToast(`🗑️ Account ${email} deleted.`);
+            sound.playShatter();
+            renderAdminAccountsList();
+        };
+
+        function renderAdminAccountsList() {
+            const list = document.getElementById('dev-accounts-list');
+            const accountsVault = JSON.parse(localStorage.getItem('chess_wiz_accounts_db') || '{}');
+            const emails = Object.keys(accountsVault);
+            
+            if (emails.length === 0) {
+                list.innerHTML = '<div class="text-xs text-white/50 py-2 text-center">No accounts in local vault.</div>';
+                return;
+            }
+            
+            let html = '';
+            emails.forEach(email => {
+                html += `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10">
+                    <span class="text-[11px] text-white font-mono truncate mr-2">${email}</span>
+                    <button type="button" onclick="adminDeleteAccount('${email}')" class="shrink-0 w-6 h-6 rounded-full bg-rose-500/20 text-rose-300 flex items-center justify-center hover:bg-rose-500/40 transition-colors">
+                        <span class="material-symbols-rounded !text-[14px]">delete</span>
+                    </button>
+                </div>`;
+            });
+            list.innerHTML = html;
         }
 
         window.onload = () => {
