@@ -3940,63 +3940,57 @@
             let internalWriteToken = false;
             const rateLimits = {};
 
-            // Capture original native localStorage methods before locking them
-            const nativeSetItem = Storage.prototype.setItem.bind(localStorage);
-            const nativeRemoveItem = Storage.prototype.removeItem.bind(localStorage);
-            const nativeClear = Storage.prototype.clear.bind(localStorage);
+            // Capture native functions without hard-binding so sessionStorage survives!
+            const nativeSetItem = Storage.prototype.setItem;
+            const nativeRemoveItem = Storage.prototype.removeItem;
+            const nativeClear = Storage.prototype.clear;
 
-            // Safe internal writer used by trusted game functions
             function trustedStorageSet(key, val) {
                 internalWriteToken = true;
                 try {
-                    nativeSetItem(key, val);
+                    nativeSetItem.call(localStorage, key, val);
                 } finally {
                     internalWriteToken = false;
                 }
             }
 
-            // 1. STORAGE FIREWALL: Block unauthorized console/malware edits to ELO & Accounts Vault
+            // Only lock ELO and Accounts DB — never block Firebase Auth User!
             const PROTECTED_KEYS = [
                 'chess_wiz_ai_elo',
-                'chess_wiz_ai_elo_sig',
+                'chess_wiz_ai_elo_sig_v2',
                 'chess_wiz_accounts_db'
             ];
 
             Storage.prototype.setItem = function(key, value) {
                 if (this === localStorage && PROTECTED_KEYS.includes(String(key))) {
                     if (!internalWriteToken && !isDeveloperAuthorized) {
-                        console.error(`🛡️ [Arcane Firewall] Unauthorized modification of "${key}" blocked! Developer permission required.`);
-                        if (typeof showToast === 'function') {
-                            showToast('🛡️ Security Firewall: Unauthorized Data Edit Blocked!');
-                        }
+                        console.error(`🛡️ [Arcane Firewall] Unauthorized modification of "${key}" blocked!`);
+                        if (typeof showToast === 'function') showToast('🛡️ Security Firewall: Data Edit Blocked!');
                         return;
                     }
                 }
-                return nativeSetItem(key, value);
+                // Use .call(this) so sessionStorage works perfectly for Firebase
+                return nativeSetItem.call(this, key, value);
             };
 
             Storage.prototype.removeItem = function(key) {
                 if (this === localStorage && PROTECTED_KEYS.includes(String(key))) {
                     if (!internalWriteToken && !isDeveloperAuthorized) {
-                        console.error(`🛡️ [Arcane Firewall] Unauthorized deletion of "${key}" blocked! Developer permission required.`);
-                        if (typeof showToast === 'function') {
-                            showToast('🛡️ Security Firewall: Deletion Blocked!');
-                        }
+                        console.error(`🛡️ [Arcane Firewall] Unauthorized deletion of "${key}" blocked!`);
+                        if (typeof showToast === 'function') showToast('🛡️ Security Firewall: Deletion Blocked!');
                         return;
                     }
                 }
-                return nativeRemoveItem(key, value);
+                return nativeRemoveItem.call(this, key);
             };
 
             Storage.prototype.clear = function() {
                 if (this === localStorage && !isDeveloperAuthorized) {
-                    console.error('🛡️ [Arcane Firewall] localStorage.clear() blocked! Developer permission required.');
-                    if (typeof showToast === 'function') {
-                        showToast('🛡️ Security Firewall: Storage Wipe Blocked!');
-                    }
+                    console.error('🛡️ [Arcane Firewall] localStorage.clear() blocked!');
+                    if (typeof showToast === 'function') showToast('🛡️ Security Firewall: Storage Wipe Blocked!');
                     return;
                 }
-                return nativeClear();
+                return nativeClear.call(this);
             };
 
             // 2. DEVELOPER MASTER PASSKEY UNLOCK / LOCK
