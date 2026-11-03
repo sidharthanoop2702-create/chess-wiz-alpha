@@ -3545,19 +3545,20 @@
             currentAuthUser = email;
             localStorage.setItem('chess_wiz_auth_user', currentAuthUser);
 
-            // Always apply Google/Provider Display Name if provided
-            if (providerName) {
-                currentDisplayName = providerName;
+            // Only apply Google Name if you haven't saved a custom one!
+            if (!localStorage.getItem('chess_wiz_display_name')) {
+                currentDisplayName = providerName || email.split('@')[0];
                 localStorage.setItem('chess_wiz_display_name', currentDisplayName);
-            } else if (!localStorage.getItem('chess_wiz_display_name')) {
-                currentDisplayName = email.split('@')[0];
-                localStorage.setItem('chess_wiz_display_name', currentDisplayName);
+            } else {
+                currentDisplayName = localStorage.getItem('chess_wiz_display_name');
             }
 
-            // Always apply Google/Provider Profile Picture if provided
-            if (providerPhotoUrl) {
+            // Only apply Google Photo if you haven't uploaded a custom one!
+            if (!localStorage.getItem('chess_wiz_avatar') && providerPhotoUrl) {
                 currentAvatarUrl = providerPhotoUrl;
                 localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
+            } else if (localStorage.getItem('chess_wiz_avatar')) {
+                currentAvatarUrl = localStorage.getItem('chess_wiz_avatar');
             }
 
             if (!localStorage.getItem('chess_wiz_ai_elo')) {
@@ -3594,14 +3595,23 @@
                 if (user && user.email) {
                     currentAuthUser = user.email;
                     localStorage.setItem('chess_wiz_auth_user', user.email);
-                    if (user.displayName) {
+                    
+                    // Load your custom name on refresh, fallback to Google if none exists
+                    if (!localStorage.getItem('chess_wiz_display_name') && user.displayName) {
                         currentDisplayName = user.displayName;
                         localStorage.setItem('chess_wiz_display_name', currentDisplayName);
+                    } else if (localStorage.getItem('chess_wiz_display_name')) {
+                        currentDisplayName = localStorage.getItem('chess_wiz_display_name');
                     }
-                    if (user.photoURL) {
+                    
+                    // Load your custom avatar on refresh, fallback to Google if none exists
+                    if (!localStorage.getItem('chess_wiz_avatar') && user.photoURL) {
                         currentAvatarUrl = user.photoURL;
                         localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
+                    } else if (localStorage.getItem('chess_wiz_avatar')) {
+                        currentAvatarUrl = localStorage.getItem('chess_wiz_avatar');
                     }
+                    
                     updateAuthHeaderUI();
                     window.loadAccountThemePreferences();
                 }
