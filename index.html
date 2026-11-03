@@ -3818,8 +3818,7 @@
                     return false;
                 }
                 const candidateHash = await sha256Raw(String(passkey || '') + "::" + SECRET_SALT);
-                const defaultCheck = await sha256Raw("Sid_Archmage_2026!::" + SECRET_SALT);
-                if (candidateHash === defaultCheck || candidateHash === DEV_PASSKEY_HASH) {
+                if (candidateHash === DEV_PASSKEY_HASH) {
                     isDeveloperAuthorized = true;
                     console.log('%c🔓 [Arcane Security] Developer Mode UNLOCKED by Sidharth. Full administrative access granted.', 'color: #34d399; font-weight: bold;');
                     if (typeof showToast === 'function') showToast('🔓 Developer Mode Unlocked!');
