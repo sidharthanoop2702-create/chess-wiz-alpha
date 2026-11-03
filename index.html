@@ -10,6 +10,17 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.gstatic.com https://cdnjs.cloudflare.com https://formsubmit.co;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chess Wiz — The Arcane Sanctuary</title>
+    <script>
+        // Silence harmless third-party CDN startup notices (Tailwind CDN & Tone.js pre-gesture notice)
+        (function() {
+            const origWarn = console.warn;
+            console.warn = function(...args) {
+                const msg = args.join(' ');
+                if (msg.includes('cdn.tailwindcss.com') || msg.includes('AudioContext was not allowed to start')) return;
+                origWarn.apply(console, args);
+            };
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com">
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Unicase:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -832,11 +843,27 @@
     </div>
 
     <script>
-        /* 1. SOUND & INSTANT HAPTIC ENGINE */
+        /* 1. SOUND & INSTANT HAPTIC ENGINE (ZERO CONSOLE WARNINGS) */
         class SoundEngine {
-            constructor() { this.enabled = true; this.volumePercent = 85; this.initialized = false; }
+            constructor() {
+                this.enabled = true;
+                this.volumePercent = 85;
+                this.initialized = false;
+                this.userHasInteracted = false;
+
+                // Unlock audio cleanly on the very first pointerdown/keydown gesture
+                const unlockAudio = () => {
+                    if (this.userHasInteracted) return;
+                    this.userHasInteracted = true;
+                    if (this.enabled) this.init();
+                    window.removeEventListener('pointerdown', unlockAudio);
+                    window.removeEventListener('keydown', unlockAudio);
+                };
+                window.addEventListener('pointerdown', unlockAudio, { once: true });
+                window.addEventListener('keydown', unlockAudio, { once: true });
+            }
             async init() {
-                if (this.initialized) return;
+                if (this.initialized || !this.userHasInteracted) return;
                 try {
                     await Tone.start();
                     this.reverb = new Tone.Reverb({ decay: 3.5, wet: 0.45 }).toDestination();
@@ -852,22 +879,26 @@
             }
             setVolumePercent(p) {
                 this.volumePercent = Math.max(0, Math.min(100, Number(p)));
-                if (typeof Tone !== 'undefined' && Tone.Destination) {
+                if (this.initialized && typeof Tone !== 'undefined' && Tone.Destination) {
                     Tone.Destination.mute = !this.enabled || this.volumePercent <= 0;
                     if (this.volumePercent > 0) Tone.Destination.volume.value = -36 + (this.volumePercent / 100) * 38;
                 }
             }
             setMuted(m) {
                 this.enabled = !m;
-                if (typeof Tone !== 'undefined' && Tone.Destination) Tone.Destination.mute = m || this.volumePercent <= 0;
+                if (this.initialized && typeof Tone !== 'undefined' && Tone.Destination) {
+                    Tone.Destination.mute = m || this.volumePercent <= 0;
+                }
             }
-            // Ultra-fast smooth haptic & audio micro-pulse
             playTactile() {
-                if (navigator.vibrate) navigator.vibrate(12); // Instant 12ms hardware tick
-                if (this.enabled) {
+                if (!this.userHasInteracted) return;
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(12); } catch (e) {}
+                }
+                if (this.enabled && this.initialized) {
                     try {
-                        const ctx = Tone.context;
-                        if (ctx && ctx.state === 'running') {
+                        const ctx = Tone.context.rawContext || Tone.context;
+                        if (ctx && ctx.state === 'running' && typeof ctx.createOscillator === 'function') {
                             const osc = ctx.createOscillator();
                             const gain = ctx.createGain();
                             osc.type = 'sine';
@@ -883,17 +914,19 @@
                     } catch (e) {}
                 }
             }
-            playSelect() { this.playTactile(); if (this.enabled) this.init().then(() => this.selectSynth?.triggerAttackRelease(["E5", "B5"], "16n")); }
-            playMove() { this.playTactile(); if (this.enabled) this.init().then(() => this.moveSynth?.triggerAttackRelease("G2", "8n")); }
+            playSelect() { if (!this.userHasInteracted) return; this.playTactile(); if (this.enabled) this.init().then(() => this.selectSynth?.triggerAttackRelease(["E5", "B5"], "16n")); }
+            playMove() { if (!this.userHasInteracted) return; this.playTactile(); if (this.enabled) this.init().then(() => this.moveSynth?.triggerAttackRelease("G2", "8n")); }
             playShatter() {
+                if (!this.userHasInteracted) return;
                 if (this.enabled) this.init().then(() => {
                     this.moveSynth?.triggerAttackRelease("C1", "4n");
                     this.noiseSynth?.triggerAttackRelease("4n");
                     this.selectSynth?.triggerAttackRelease(["C3", "F#3", "C4"], "8n");
                 });
             }
-            playCheck() { if (this.enabled) this.init().then(() => this.selectSynth?.triggerAttackRelease(["D4", "A4", "F5"], "4n")); }
+            playCheck() { if (!this.userHasInteracted) return; if (this.enabled) this.init().then(() => this.selectSynth?.triggerAttackRelease(["D4", "A4", "F5"], "4n")); }
             playFanfare() {
+                if (!this.userHasInteracted) return;
                 if (this.enabled) this.init().then(() => {
                     const now = Tone.now();
                     this.selectSynth?.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
@@ -3356,8 +3389,7 @@
                 localStorage.setItem('chess_wiz_avatar', currentAvatarUrl);
             }
             if (!localStorage.getItem('chess_wiz_ai_elo')) {
-                playerAiElo = 1000;
-                localStorage.setItem('chess_wiz_ai_elo', '1000');
+                playerAiElo = ArcaneSecurity.setProtectedElo(1000);
             }
             ArcaneSecurity.trustedStorageSet('chess_wiz_auth_user', currentAuthUser);
             updateAuthHeaderUI();
