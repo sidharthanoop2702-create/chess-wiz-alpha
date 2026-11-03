@@ -1725,15 +1725,31 @@
 
                     const evalBefore = evaluateBoard(sim);
                     sim.move(played);
-                    const playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+                    // Search 2 plies deep so the engine sees follow-up tactics after a sacrifice
+                    const playedEval = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
 
                     const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
-                    const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 15;
-                    const matGain = isMax ? (playedEval - evalBefore) : (evalBefore - playedEval);
+                    const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 10;
+
+                    // --- CHESS.COM-STYLE TRUE SACRIFICE DETECTOR FOR BRILLIANT (!!) ---
+                    // 1. Must be an important piece (Knight, Bishop, Rook, or Queen — never a Pawn or King)
+                    const movedVal = PIECE_VALUES[played.piece] || 0;
+                    const capturedVal = played.captured ? (PIECE_VALUES[played.captured] || 0) : 0;
+                    const isImportantPiece = ['n', 'b', 'r', 'q'].includes(played.piece);
+
+                    // 2. Check if the piece was deliberately placed on a square where the opponent can capture it
+                    //    for a net material loss (or if another friendly major piece was left hanging as a decoy)
+                    const oppResponses = sim.moves({ verbose: true });
+                    const canRecaptureMovedPiece = oppResponses.some(r => r.to === played.to);
+                    const isDirectSacrifice = isImportantPiece && canRecaptureMovedPiece && (movedVal - capturedVal >= 200);
+
+                    // 3. Position must still be winning / advantageous for the player (>= +180 centipawns or forced mate)
+                    const playerAdvantageAfter = isMax ? playedEval : -playedEval;
+                    const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerAdvantageAfter >= 180 || sim.in_checkmate());
 
                     let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
 
-                    if (isBestPlayed && ((played.san && played.san.includes('#')) || (played.captured && matGain >= 280))) {
+                    if (isWinningSacrifice) {
                         rating = 'Brilliant'; badgeStyle = 'bg-cyan-400/25 text-cyan-200 border-cyan-300/50'; symbol = '!!';
                     } else if (isBestPlayed) {
                         rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
