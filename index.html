@@ -504,15 +504,20 @@
                 </div>
 
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5 space-y-2.5">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
                         <span class="text-xs font-semibold uppercase tracking-wider text-sky-200">Move-by-Move Breakdown</span>
-                        <div id="start-analysis-summary-badges" class="flex items-center gap-1.5 text-[10px] font-semibold"></div>
+                        <div class="flex items-center gap-2">
+                            <div id="start-analysis-summary-badges" class="flex items-center gap-1.5 text-[10px] font-semibold"></div>
+                            <button type="button" id="btn-start-visual-review" onclick="openVisualReviewMode()" class="hidden md3-btn md3-btn-primary !h-7 !px-2.5 !text-[11px] shadow-md">
+                                <span class="material-symbols-rounded !text-sm">visibility</span>
+                                <span>Visual Review</span>
+                            </button>
+                        </div>
                     </div>
                     <div id="start-analysis-list" class="max-h-60 overflow-y-auto space-y-2 pr-1">
                         <div class="text-xs text-white/50 py-4 text-center">Click "Previous Game" or "Import File..." to analyse.</div>
                     </div>
                 </div>
-            </div>
 
             <!-- 6. CONTINUE GAME PANEL VIEW (Previous Cloud Match or Import Incomplete Save) -->
             <div id="start-menu-continue-view" class="hidden space-y-3 relative z-10 pointer-events-auto">
@@ -600,37 +605,53 @@
         </div>
     </header>
 
-    <!-- Enlarged Vertical Puzzle Objective HUD (Fixed on Left Side) -->
-    <div id="puzzle-banner" class="fixed top-28 left-6 z-20 w-80 sm:w-96 hidden pointer-events-none">
-        <div class="md3-surface rounded-3xl p-5 border border-emerald-400/50 shadow-2xl flex flex-col gap-3.5 pointer-events-auto text-left">
+    <!-- Left-Side Visual Review & Interactive Replay HUD (Docked Left like Puzzle Banner) -->
+    <div id="visual-review-banner" class="fixed top-24 left-6 z-20 w-80 sm:w-96 hidden pointer-events-none">
+        <div class="md3-surface rounded-3xl p-5 border border-sky-400/50 shadow-2xl flex flex-col gap-3 pointer-events-auto text-left max-h-[82vh]">
+            <!-- Header -->
             <div class="flex items-center justify-between pb-2 border-b border-white/10">
-                <span id="puzzle-badge-num" class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-emerald-500/30 text-emerald-200">Archmage 1/3</span>
-                <span class="text-xs text-amber-300 font-semibold flex items-center gap-1">
-                    <span class="material-symbols-rounded !text-sm">bolt</span> 3 Hints • 3 Undos
-                </span>
-            </div>
-            <div class="space-y-1.5">
-                <div id="puzzle-title" class="font-gothic font-bold text-base sm:text-lg text-white tracking-wide">Opera House Finale</div>
-                <div id="puzzle-objective" class="text-xs sm:text-sm text-emerald-200/95 font-medium leading-relaxed bg-emerald-950/30 p-2.5 rounded-xl border border-emerald-500/20">White to Move — Mate in 2</div>
-            </div>
-            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
-                <button type="button" onclick="triggerOracleHint()" id="puzzle-banner-hint-btn" class="md3-btn !h-9 !px-3 !text-xs border border-amber-400/35 text-amber-200 justify-center">
-                    <span class="material-symbols-rounded !text-sm text-amber-300">lightbulb</span>
-                    <span id="puzzle-banner-hint-label">Hint (3/3)</span>
-                </button>
-                <button type="button" onclick="document.getElementById('btn-undo').click()" id="puzzle-banner-undo-btn" class="md3-btn !h-9 !px-3 !text-xs border border-purple-300/35 text-purple-200 justify-center">
-                    <span class="material-symbols-rounded !text-sm">undo</span>
-                    <span id="puzzle-banner-undo-label">Undo (3/3)</span>
-                </button>
-                <button type="button" onclick="retryCurrentPuzzle()" class="md3-btn md3-btn-tonal !h-9 !px-3 !text-xs text-amber-200 justify-center">
-                    <span class="material-symbols-rounded !text-sm">refresh</span>
-                    <span>Retry Trial</span>
-                </button>
-                <button type="button" onclick="nextPuzzle()" class="md3-btn md3-btn-primary !h-9 !px-3 !text-xs justify-center">
-                    <span>Next Puzzle</span>
-                    <span class="material-symbols-rounded !text-sm">chevron_right</span>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-rounded text-sky-300">visibility</span>
+                    <div>
+                        <div class="font-gothic font-bold text-sm text-white tracking-wide">Visual Game Review</div>
+                        <div id="vr-step-counter" class="text-[10px] text-sky-200/80 font-mono">Move 0 / 0</div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeVisualReviewMode()" class="md3-btn !h-7 !px-2.5 !text-xs border border-white/15 text-white/80 hover:text-white">
+                    <span class="material-symbols-rounded !text-sm">close_fullscreen</span>
+                    <span>Center View</span>
                 </button>
             </div>
+
+            <!-- Current Move Highlight Card -->
+            <div id="vr-current-move-card" class="rounded-2xl bg-sky-950/35 border border-sky-400/25 p-3 text-xs text-sky-100 leading-relaxed">
+                Use the replay controls below or click any move in the list to inspect it on the 3D chessboard.
+            </div>
+
+            <!-- Replay Controls: Start, Prev, Play/Pause, Next, End -->
+            <div class="grid grid-cols-5 gap-1.5">
+                <button type="button" onclick="stepVisualReviewTo(0)" class="md3-btn md3-btn-tonal !h-9 !px-0 justify-center" title="Start of Match">
+                    <span class="material-symbols-rounded !text-base">first_page</span>
+                </button>
+                <button type="button" onclick="stepVisualReviewBy(-1)" class="md3-btn md3-btn-tonal !h-9 !px-0 justify-center" title="Previous Move">
+                    <span class="material-symbols-rounded !text-base">chevron_left</span>
+                </button>
+                <button type="button" id="vr-play-btn" onclick="toggleVisualReviewAutoplay()" class="md3-btn md3-btn-primary !h-9 !px-0 justify-center" title="Play / Pause Replay">
+                    <span id="vr-play-icon" class="material-symbols-rounded !text-base">play_arrow</span>
+                </button>
+                <button type="button" onclick="stepVisualReviewBy(1)" class="md3-btn md3-btn-tonal !h-9 !px-0 justify-center" title="Next Move">
+                    <span class="material-symbols-rounded !text-base">chevron_right</span>
+                </button>
+                <button type="button" onclick="stepVisualReviewTo(window.lastAnalysedMoves ? window.lastAnalysedMoves.length : 0)" class="md3-btn md3-btn-tonal !h-9 !px-0 justify-center" title="Final Board State">
+                    <span class="material-symbols-rounded !text-base">last_page</span>
+                </button>
+            </div>
+
+            <!-- Summary Badges -->
+            <div id="vr-summary-badges" class="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold pt-1 border-t border-white/10"></div>
+
+            <!-- Clickable Move-by-Move Breakdown List -->
+            <div id="vr-move-list" class="overflow-y-auto space-y-1.5 pr-1 flex-1 max-h-64"></div>
         </div>
     </div>
 
@@ -677,15 +698,18 @@
 
             <!-- Expandable Move-by-Move Analysis Section -->
             <div id="analysis-panel" class="hidden space-y-3 pt-3 border-t border-white/10">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-2">
                     <span class="text-xs font-semibold uppercase tracking-wider text-sky-200">Cathedral Oracle Move Review</span>
-                    <div id="analysis-summary-badges" class="flex items-center gap-1.5 text-[10px] font-semibold"></div>
+                    <div class="flex items-center gap-2">
+                        <div id="analysis-summary-badges" class="flex items-center gap-1.5 text-[10px] font-semibold"></div>
+                        <button type="button" id="btn-postgame-visual-review" onclick="openVisualReviewMode()" class="hidden md3-btn md3-btn-primary !h-7 !px-2.5 !text-[11px] shadow-md">
+                            <span class="material-symbols-rounded !text-sm">visibility</span>
+                            <span>Visual Review</span>
+                        </button>
+                    </div>
                 </div>
                 <div id="analysis-list" class="max-h-60 overflow-y-auto space-y-2 pr-1"></div>
             </div>
-
-        </div>
-    </div>
 
     <!-- Pawn Promotion Modal -->
     <div id="promotion-modal" class="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
@@ -1687,18 +1711,36 @@
             runMoveAnalysisIntoContainers(chess.history({ verbose: true }), 'analysis-list', 'analysis-summary-badges');
         }
 
+        // Global state for Visual Review Replay
+        window.lastAnalysedMoves = [];
+        window.lastAnalysedReport = [];
+        window.vrCurrentPly = 0;
+        window.vrAutoplayTimer = null;
+        window.vrReturnContext = 'start'; // 'start' or 'gameover'
+
         function runMoveAnalysisIntoContainers(history, listId, summaryId) {
             const listEl = document.getElementById(listId);
             const summaryEl = document.getElementById(summaryId);
+            const startVrBtn = document.getElementById('btn-start-visual-review');
+            const postVrBtn = document.getElementById('btn-postgame-visual-review');
             if (!listEl || !summaryEl) return;
+
             listEl.innerHTML = '<div class="text-xs text-white/60 py-3 text-center">Consulting Cathedral Oracle...</div>';
+            startVrBtn?.classList.add('hidden');
+            postVrBtn?.classList.add('hidden');
 
             setTimeout(() => {
+                // If there are no moves played in that match, keep the window in the center and show "No moves played."
                 if (!history || !history.length) {
-                    listEl.innerHTML = '<div class="text-xs text-white/60 py-3 text-center">No moves recorded to analyse.</div>';
+                    window.lastAnalysedMoves = [];
+                    window.lastAnalysedReport = [];
+                    listEl.innerHTML = '<div class="text-xs text-amber-200/80 py-4 text-center font-semibold">No moves played.</div>';
                     summaryEl.innerHTML = '';
                     return;
                 }
+
+                window.lastAnalysedMoves = history;
+                window.lastAnalysedReport = [];
 
                 const sim = new Chess();
                 const counts = { Brilliant: 0, Best: 0, Okay: 0, Mistake: 0, Blunder: 0 };
@@ -1725,7 +1767,7 @@
 
                     const evalBefore = evaluateBoard(sim);
                     sim.move(played);
-                    // Match depth 1 so bestEval and playedEval use the exact same scale
+                    const fenAfter = sim.fen();
                     const playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
 
                     const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
@@ -1750,13 +1792,10 @@
                     } else if (isBestPlayed) {
                         rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
                     } else if (cpLoss <= 95) {
-                        // Restored original Okay threshold
                         rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
                     } else if (cpLoss <= 240) {
-                        // Restored original Mistake threshold
                         rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                     } else {
-                        // Anything worse than 240 is a Blunder
                         rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
                     }
 
@@ -1764,9 +1803,26 @@
                     const moveNum = Math.floor(i / 2) + 1;
                     const sideTag = turnColor === 'w' ? 'Marble (W)' : 'Obsidian (B)';
                     const showSuggestion = (rating === 'Mistake' || rating === 'Blunder') && bestMove;
+                    const betterSAN = showSuggestion ? formatMoveSAN(bestMove) : '';
+
+                    window.lastAnalysedReport.push({
+                        ply: i + 1,
+                        moveNum,
+                        turnColor,
+                        san: played.san || `${played.from}→${played.to}`,
+                        from: played.from,
+                        to: played.to,
+                        fenAfter,
+                        rating,
+                        badgeStyle,
+                        symbol,
+                        sideTag,
+                        betterSAN,
+                        bestMove
+                    });
 
                     html += `
-                        <div class="rounded-xl bg-white/5 border border-white/10 p-2.5 flex flex-col gap-1 text-left">
+                        <div onclick="openVisualReviewMode(${i + 1})" class="cursor-pointer hover:bg-white/10 transition-colors rounded-xl bg-white/5 border border-white/10 p-2.5 flex flex-col gap-1 text-left">
                             <div class="flex items-center justify-between">
                                 <div class="text-xs font-semibold text-white">
                                     <span class="text-white/50 font-mono mr-1">${moveNum}${turnColor === 'w' ? '.' : '...'}</span>
@@ -1778,7 +1834,7 @@
                             ${showSuggestion ? `
                                 <div class="text-[11px] text-amber-200/90 flex items-center gap-1 mt-0.5">
                                     <span class="material-symbols-rounded !text-sm text-amber-300">lightbulb</span>
-                                    <span>Better move was <strong>${formatMoveSAN(bestMove)}</strong></span>
+                                    <span>Better move was <strong>${betterSAN}</strong></span>
                                 </div>
                             ` : ''}
                         </div>
@@ -1795,6 +1851,180 @@
                 listEl.innerHTML = html;
             }, 60);
         }
+
+        const badgesHTML = `
+                    <span class="px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-200">!! ${counts.Brilliant}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">★ ${counts.Best}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200">✓ ${counts.Okay}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">? ${counts.Mistake}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-200">?? ${counts.Blunder}</span>
+                `;
+                summaryEl.innerHTML = badgesHTML;
+                listEl.innerHTML = html;
+
+                // Populate the Left-Side Visual Review HUD list & show the Visual Review button!
+                const vrBadges = document.getElementById('vr-summary-badges');
+                if (vrBadges) vrBadges.innerHTML = badgesHTML;
+                renderVisualReviewMoveList();
+
+                if (listId === 'start-analysis-list') startVrBtn?.classList.remove('hidden');
+                if (listId === 'analysis-list') postVrBtn?.classList.remove('hidden');
+            }, 60);
+        }
+
+        function renderVisualReviewMoveList() {
+            const vrList = document.getElementById('vr-move-list');
+            if (!vrList) return;
+            vrList.innerHTML = window.lastAnalysedReport.map(item => `
+                <div id="vr-move-row-${item.ply}" onclick="stepVisualReviewTo(${item.ply})" class="cursor-pointer rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 p-2 flex flex-col gap-0.5 transition-all">
+                    <div class="flex items-center justify-between">
+                        <div class="text-xs font-semibold text-white">
+                            <span class="text-white/50 font-mono mr-1">${item.moveNum}${item.turnColor === 'w' ? '.' : '...'}</span>
+                            <span>${item.san}</span>
+                            <span class="text-[10px] text-white/45 ml-1">(${item.sideTag})</span>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.badgeStyle}">${item.rating} ${item.symbol}</span>
+                    </div>
+                    ${item.betterSAN ? `<div class="text-[10px] text-amber-200/90">💡 Better: <strong>${item.betterSAN}</strong></div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        window.openVisualReviewMode = function(initialPly = 1) {
+            if (!window.lastAnalysedReport || !window.lastAnalysedReport.length) {
+                showToast('No moves played.');
+                return;
+            }
+            stopVisualReviewAutoplay();
+            sound.playSelect();
+
+            // Remember whether we came from the Start Menu or the Game Over modal
+            const goModal = document.getElementById('game-over-modal');
+            if (goModal && !goModal.classList.contains('hidden')) {
+                window.vrReturnContext = 'gameover';
+                goModal.classList.add('hidden');
+                goModal.classList.remove('flex');
+            } else {
+                window.vrReturnContext = 'start';
+                isStartMenuOpen = false;
+                const overlay = document.getElementById('start-menu-overlay');
+                overlay.classList.add('opacity-0', 'pointer-events-none', 'hidden');
+                overlay.style.display = 'none';
+            }
+
+            // Show the 3D chessboard & dock the Visual Review window to the left (like Puzzles HUD)
+            document.getElementById('puzzle-banner').classList.add('hidden');
+            document.getElementById('top-hud-bar').classList.remove('hud-top-hidden');
+            document.getElementById('top-hud-bar').classList.add('hud-visible');
+            document.getElementById('visual-review-banner').classList.remove('hidden');
+
+            applyCameraPreset(0);
+            stepVisualReviewTo(Math.min(initialPly, window.lastAnalysedReport.length));
+        };
+
+        window.closeVisualReviewMode = function() {
+            stopVisualReviewAutoplay();
+            clearOracleHintVisuals();
+            document.getElementById('visual-review-banner').classList.add('hidden');
+            sound.playSelect();
+
+            if (window.vrReturnContext === 'gameover') {
+                const goModal = document.getElementById('game-over-modal');
+                goModal.classList.remove('hidden');
+                goModal.classList.add('flex');
+            } else {
+                openStartMenu();
+                toggleStartAnalysePanel();
+            }
+        };
+
+        window.stepVisualReviewTo = function(targetPly) {
+            if (!window.lastAnalysedReport || !window.lastAnalysedReport.length) return;
+            const maxPly = window.lastAnalysedReport.length;
+            window.vrCurrentPly = Math.max(0, Math.min(maxPly, targetPly));
+
+            clearOracleHintVisuals();
+
+            if (window.vrCurrentPly === 0) {
+                chess.reset();
+                lastMoveSquares = [];
+                syncBoardWithEngine(false);
+                clearSelectionAndHighlights();
+                document.getElementById('vr-step-counter').textContent = `Start Position (0 / ${maxPly})`;
+                document.getElementById('vr-current-move-card').innerHTML = `Starting position ready. Click <strong>Next (›)</strong> or <strong>Play (▶)</strong> to step through the match.`;
+            } else {
+                const step = window.lastAnalysedReport[window.vrCurrentPly - 1];
+                chess.load(step.fenAfter);
+                lastMoveSquares = [step.from, step.to];
+                syncBoardWithEngine(false);
+                clearSelectionAndHighlights();
+                sound.playMove();
+
+                document.getElementById('vr-step-counter').textContent = `Move ${window.vrCurrentPly} / ${maxPly}`;
+                document.getElementById('vr-current-move-card').innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-white">${step.moveNum}${step.turnColor === 'w' ? '.' : '...'} ${step.san} (${step.from.toUpperCase()}→${step.to.toUpperCase()})</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${step.badgeStyle}">${step.rating} ${step.symbol}</span>
+                    </div>
+                    ${step.betterSAN ? `<div class="text-amber-300 text-[11px]">💡 Oracle Suggestion: <strong>${step.betterSAN}</strong> (shown by golden arc)</div>` : `<div class="text-white/70 text-[11px]">Solid continuation on the board.</div>`}
+                `;
+
+                // If it was a Mistake or Blunder, draw the golden Oracle arc for the better move!
+                if (step.bestMove) {
+                    const sPos = squareToWorld(step.bestMove.from), ePos = squareToWorld(step.bestMove.to);
+                    const mPos = new THREE.Vector3().addVectors(sPos, ePos).multiplyScalar(0.5); mPos.y = 2.2;
+                    const grp = new THREE.Group();
+                    const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(sPos.x, 0.25, sPos.z), mPos, new THREE.Vector3(ePos.x, 0.35, ePos.z));
+                    grp.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.06, 8, false), new THREE.MeshBasicMaterial({ color: 0xfbbf24, depthTest: false })));
+                    scene.add(grp);
+                    activeHintGroup = grp;
+                }
+            }
+
+            // Highlight active row in the left HUD list
+            window.lastAnalysedReport.forEach(item => {
+                const row = document.getElementById(`vr-move-row-${item.ply}`);
+                if (row) {
+                    row.classList.toggle('border-sky-400', item.ply === window.vrCurrentPly);
+                    row.classList.toggle('bg-sky-500/20', item.ply === window.vrCurrentPly);
+                    if (item.ply === window.vrCurrentPly) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
+            });
+        };
+
+        window.stepVisualReviewBy = function(delta) {
+            stopVisualReviewAutoplay();
+            stepVisualReviewTo((window.vrCurrentPly || 0) + delta);
+        };
+
+        function stopVisualReviewAutoplay() {
+            if (window.vrAutoplayTimer) {
+                clearInterval(window.vrAutoplayTimer);
+                window.vrAutoplayTimer = null;
+            }
+            const icon = document.getElementById('vr-play-icon');
+            if (icon) icon.textContent = 'play_arrow';
+        }
+
+        window.toggleVisualReviewAutoplay = function() {
+            if (window.vrAutoplayTimer) {
+                stopVisualReviewAutoplay();
+                return;
+            }
+            if (!window.lastAnalysedReport || !window.lastAnalysedReport.length) return;
+            if (window.vrCurrentPly >= window.lastAnalysedReport.length) {
+                stepVisualReviewTo(0);
+            }
+            const icon = document.getElementById('vr-play-icon');
+            if (icon) icon.textContent = 'pause';
+            window.vrAutoplayTimer = setInterval(() => {
+                if (window.vrCurrentPly < window.lastAnalysedReport.length) {
+                    stepVisualReviewTo(window.vrCurrentPly + 1);
+                } else {
+                    stopVisualReviewAutoplay();
+                }
+            }, 1250);
+        };
 
         function finalizeAnimatedMove(anim) {
             const { attacker, defender, result, rookAnim, endPos } = anim;
@@ -2495,6 +2725,15 @@
                 if (data.playerColor) playerColor = data.playerColor;
                 if (data.aiDifficulty) aiDifficulty = data.aiDifficulty;
 
+                const moveCount = Array.isArray(data.historyVerbose) ? data.historyVerbose.length : 0;
+                if (moveCount === 0 && (!data.pgn || !data.pgn.trim())) {
+                    sound.playCheck();
+                    const descEl = document.getElementById('continue-prev-desc');
+                    if (descEl) descEl.textContent = 'No moves played.';
+                    showToast('No moves played.');
+                    return;
+                }
+
                 let loaded = false;
                 if (data.pgn) {
                     loaded = chess.load_pgn(data.pgn);
@@ -2537,6 +2776,14 @@
                         if (!chess.load_pgn(content)) throw new Error('Invalid PGN');
                     } else {
                         const data = JSON.parse(content);
+                        const moveCount = Array.isArray(data.historyVerbose) ? data.historyVerbose.length : 0;
+                if (moveCount === 0 && (!data.pgn || !data.pgn.trim())) {
+                    sound.playCheck();
+                    const descEl = document.getElementById('continue-prev-desc');
+                    if (descEl) descEl.textContent = 'No moves played.';
+                    showToast('No moves played.');
+                    return;
+                }
 
                         // Verify the cryptographic seal on imported JSON saves
                         if (typeof ArcaneSecurity !== 'undefined' && ArcaneSecurity.verifySavePayload) {
@@ -2617,8 +2864,6 @@
 
         window.analysePreviousCloudGame = function() {
             const srcLabel = document.getElementById('start-analyse-source-label');
-            // 1. Always prioritize the last COMPLETED match saved in CLOUD_PREV_GAME_KEY
-            // 2. Fallback to the active incomplete match if no completed match exists yet
             const raw = localStorage.getItem(CLOUD_PREV_GAME_KEY) || localStorage.getItem(CLOUD_ACTIVE_KEY);
 
             if (!raw) {
@@ -2628,8 +2873,9 @@
                     sound.playSelect();
                     return;
                 }
-                if (srcLabel) srcLabel.textContent = 'No previous Cloud match found yet.';
-                document.getElementById('start-analysis-list').innerHTML = '<div class="text-xs text-white/50 py-4 text-center">Play and finish a match or click "Import File..." to analyse!</div>';
+                if (srcLabel) srcLabel.textContent = 'No moves played.';
+                document.getElementById('start-analysis-list').innerHTML = '<div class="text-xs text-amber-200/80 py-4 text-center font-semibold">No moves played.</div>';
+                document.getElementById('btn-start-visual-review')?.classList.add('hidden');
                 return;
             }
 
@@ -2640,6 +2886,12 @@
                     const temp = new Chess();
                     if (temp.load_pgn(data.pgn)) hist = temp.history({ verbose: true });
                 }
+                if (!hist.length) {
+                    if (srcLabel) srcLabel.textContent = 'Saved Match (0 moves)';
+                    runMoveAnalysisIntoContainers([], 'start-analysis-list', 'start-analysis-summary-badges');
+                    sound.playSelect();
+                    return;
+                }
                 const statusTag = data.completed ? 'Completed Match' : 'In-Progress Match';
                 if (srcLabel) srcLabel.textContent = `Reviewing ${statusTag} (${hist.length} moves)`;
                 runMoveAnalysisIntoContainers(hist, 'start-analysis-list', 'start-analysis-summary-badges');
@@ -2647,40 +2899,6 @@
             } catch (e) {
                 showToast('Could not load Cloud game for analysis.');
             }
-        };
-
-        window.handleImportGameForAnalysis = function(event) {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const content = String(ev.target.result || '');
-                    let hist = [];
-                    if (file.name.toLowerCase().endsWith('.pgn')) {
-                        const temp = new Chess();
-                        if (!temp.load_pgn(content)) throw new Error('Invalid PGN');
-                        hist = temp.history({ verbose: true });
-                    } else {
-                        const data = JSON.parse(content);
-                        if (Array.isArray(data.historyVerbose) && data.historyVerbose.length) {
-                            hist = data.historyVerbose;
-                        } else if (data.pgn) {
-                            const temp = new Chess();
-                            if (temp.load_pgn(data.pgn)) hist = temp.history({ verbose: true });
-                        }
-                    }
-                    document.getElementById('start-analyse-source-label').textContent = `Analysing imported file: ${file.name}`;
-                    runMoveAnalysisIntoContainers(hist, 'start-analysis-list', 'start-analysis-summary-badges');
-                    sound.playSelect();
-                    showToast(`Analysing "${file.name}"`);
-                } catch (err) {
-                    sound.playCheck();
-                    showToast('Invalid file for analysis! Please choose a .JSON or .PGN file.');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = '';
         };
 
         window.toggleStartCustomizePanel = function() {
