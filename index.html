@@ -56,6 +56,7 @@
         .wizard-title-glow {
             font-family: 'Cinzel Decorative', serif;
             background: linear-gradient(135deg, #fffbeb 0%, #fde68a 35%, #f59e0b 68%, #e9d5ff 100%);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 2px 14px rgba(245, 158, 11, 0.38)) drop-shadow(0 0 28px rgba(168, 85, 247, 0.35));
@@ -518,6 +519,7 @@
                         <div class="text-xs text-white/50 py-4 text-center">Click "Previous Game" or "Import File..." to analyse.</div>
                     </div>
                 </div>
+            </div>
 
             <!-- 6. CONTINUE GAME PANEL VIEW (Previous Cloud Match or Import Incomplete Save) -->
             <div id="start-menu-continue-view" class="hidden space-y-3 relative z-10 pointer-events-auto">
@@ -1841,18 +1843,7 @@
                     `;
                 }
 
-                summaryEl.innerHTML = `
-                    <span class="px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-200">!! ${counts.Brilliant}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">★ ${counts.Best}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200">✓ ${counts.Okay}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">? ${counts.Mistake}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-200">?? ${counts.Blunder}</span>
-                `;
-                listEl.innerHTML = html;
-            }, 60);
-        }
-
-        const badgesHTML = `
+                const badgesHTML = `
                     <span class="px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-200">!! ${counts.Brilliant}</span>
                     <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">★ ${counts.Best}</span>
                     <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200">✓ ${counts.Okay}</span>
