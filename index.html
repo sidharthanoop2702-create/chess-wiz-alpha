@@ -607,53 +607,42 @@
         </div>
     </header>
 
-    <!-- Left-Side Visual Review & Interactive Replay HUD (Docked Left like Puzzle Banner) -->
-    <div id="visual-review-banner" class="fixed top-24 left-6 z-20 w-80 sm:w-96 hidden pointer-events-none">
-        <div class="md3-surface rounded-3xl p-5 border border-sky-400/50 shadow-2xl flex flex-col gap-3 pointer-events-auto text-left max-h-[82vh]">
+    <!-- Left-Side Visual Review HUD (Simplified Single-Move Replay) -->
+    <div id="visual-review-banner" class="fixed top-28 left-6 z-40 w-80 sm:w-[22rem] hidden pointer-events-none">
+        <div class="md3-surface rounded-3xl p-5 border border-sky-400/50 shadow-2xl flex flex-col gap-3.5 pointer-events-auto text-left">
             <!-- Header -->
             <div class="flex items-center justify-between pb-2 border-b border-white/10">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-rounded text-sky-300">visibility</span>
-                    <div>
-                        <div class="font-gothic font-bold text-sm text-white tracking-wide">Visual Game Review</div>
-                        <div id="vr-step-counter" class="text-[10px] text-sky-200/80 font-mono">Move 0 / 0</div>
-                    </div>
+                    <span class="font-gothic font-bold text-sm text-white tracking-wide">Visual Review</span>
                 </div>
                 <button type="button" onclick="closeVisualReviewMode()" class="md3-btn !h-7 !px-2.5 !text-xs border border-white/15 text-white/80 hover:text-white">
                     <span class="material-symbols-rounded !text-sm">close_fullscreen</span>
-                    <span>Center View</span>
+                    <span>Close</span>
                 </button>
             </div>
 
-            <!-- Current Move Highlight Card -->
-            <div id="vr-current-move-card" class="rounded-2xl bg-sky-950/35 border border-sky-400/25 p-3 text-xs text-sky-100 leading-relaxed">
-                Use the replay controls below or click any move in the list to inspect it on the 3D chessboard.
+            <!-- Single Move Display -->
+            <div class="flex flex-col gap-1.5 min-h-[90px] justify-center items-center text-center bg-black/40 rounded-2xl p-4 border border-white/5 relative">
+                <div id="vr-step-counter" class="text-[10px] font-bold uppercase tracking-widest text-sky-200/80 mb-1">Move 0 / 0</div>
+                <div id="vr-move-text" class="text-2xl font-black text-white">Ready</div>
+                <div id="vr-move-rating" class="mt-1"></div>
             </div>
 
-            <!-- Replay Controls: Start, Prev, Play/Pause, Next, End -->
-            <div class="grid grid-cols-5 gap-1.5">
-                <button type="button" onclick="stepVisualReviewTo(0)" class="md3-btn md3-btn-tonal !h-9 !px-0 justify-center" title="Start of Match">
-                    <span class="material-symbols-rounded !text-base">first_page</span>
+            <!-- Oracle Suggestion Area (Always above buttons) -->
+            <div id="vr-suggestion-area" class="min-h-[44px] flex items-center justify-center text-center"></div>
+
+            <!-- Previous / Next Controls -->
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+                <button type="button" onclick="stepVisualReviewBy(-1)" id="vr-prev-btn" class="md3-btn md3-btn-tonal !h-11 !text-xs">
+                    <span class="material-symbols-rounded !text-lg">chevron_left</span>
+                    <span>Previous</span>
                 </button>
-                <button type="button" onclick="stepVisualReviewBy(-1)" class="md3-btn md3-btn-tonal !h-9 !px-0 justify-center" title="Previous Move">
-                    <span class="material-symbols-rounded !text-base">chevron_left</span>
-                </button>
-                <button type="button" id="vr-play-btn" onclick="toggleVisualReviewAutoplay()" class="md3-btn md3-btn-primary !h-9 !px-0 justify-center" title="Play / Pause Replay">
-                    <span id="vr-play-icon" class="material-symbols-rounded !text-base">play_arrow</span>
-                </button>
-                <button type="button" onclick="stepVisualReviewBy(1)" class="md3-btn md3-btn-tonal !h-9 !px-0 justify-center" title="Next Move">
-                    <span class="material-symbols-rounded !text-base">chevron_right</span>
-                </button>
-                <button type="button" onclick="stepVisualReviewTo(window.lastAnalysedMoves ? window.lastAnalysedMoves.length : 0)" class="md3-btn md3-btn-tonal !h-9 !px-0 justify-center" title="Final Board State">
-                    <span class="material-symbols-rounded !text-base">last_page</span>
+                <button type="button" onclick="stepVisualReviewBy(1)" id="vr-next-btn" class="md3-btn md3-btn-primary !h-11 !text-xs">
+                    <span>Next Move</span>
+                    <span class="material-symbols-rounded !text-lg">chevron_right</span>
                 </button>
             </div>
-
-            <!-- Summary Badges -->
-            <div id="vr-summary-badges" class="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold pt-1 border-t border-white/10"></div>
-
-            <!-- Clickable Move-by-Move Breakdown List -->
-            <div id="vr-move-list" class="overflow-y-auto space-y-1.5 pr-1 flex-1 max-h-64"></div>
         </div>
     </div>
 
@@ -1886,7 +1875,6 @@
                 showToast('No moves played.');
                 return;
             }
-            stopVisualReviewAutoplay();
             sound.playSelect();
 
             // Remember whether we came from the Start Menu or the Game Over modal
@@ -1903,7 +1891,7 @@
                 overlay.style.display = 'none';
             }
 
-            // Show the 3D chessboard & dock the Visual Review window to the left (like Puzzles HUD)
+            // Show the 3D chessboard & dock the Visual Review window to the left
             document.getElementById('puzzle-banner').classList.add('hidden');
             document.getElementById('top-hud-bar').classList.remove('hud-top-hidden');
             document.getElementById('top-hud-bar').classList.add('hud-visible');
@@ -1914,7 +1902,6 @@
         };
 
         window.closeVisualReviewMode = function() {
-            stopVisualReviewAutoplay();
             clearOracleHintVisuals();
             document.getElementById('visual-review-banner').classList.add('hidden');
             sound.playSelect();
@@ -1936,13 +1923,24 @@
 
             clearOracleHintVisuals();
 
+            const moveTextEl = document.getElementById('vr-move-text');
+            const counterEl = document.getElementById('vr-step-counter');
+            const ratingEl = document.getElementById('vr-move-rating');
+            const suggestionEl = document.getElementById('vr-suggestion-area');
+            
+            document.getElementById('vr-prev-btn').disabled = (window.vrCurrentPly === 0);
+            document.getElementById('vr-next-btn').disabled = (window.vrCurrentPly === maxPly);
+
             if (window.vrCurrentPly === 0) {
                 chess.reset();
                 lastMoveSquares = [];
                 syncBoardWithEngine(false);
                 clearSelectionAndHighlights();
-                document.getElementById('vr-step-counter').textContent = `Start Position (0 / ${maxPly})`;
-                document.getElementById('vr-current-move-card').innerHTML = `Starting position ready. Click <strong>Next (›)</strong> or <strong>Play (▶)</strong> to step through the match.`;
+                
+                counterEl.textContent = `Start Position (0 / ${maxPly})`;
+                moveTextEl.textContent = 'Match Start';
+                ratingEl.innerHTML = '';
+                suggestionEl.innerHTML = `<span class="text-xs text-sky-200/60 font-medium">Click Next Move to begin replay.</span>`;
             } else {
                 const step = window.lastAnalysedReport[window.vrCurrentPly - 1];
                 chess.load(step.fenAfter);
@@ -1951,17 +1949,19 @@
                 clearSelectionAndHighlights();
                 sound.playMove();
 
-                document.getElementById('vr-step-counter').textContent = `Move ${window.vrCurrentPly} / ${maxPly}`;
-                document.getElementById('vr-current-move-card').innerHTML = `
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="font-bold text-white">${step.moveNum}${step.turnColor === 'w' ? '.' : '...'} ${step.san} (${step.from.toUpperCase()}→${step.to.toUpperCase()})</span>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${step.badgeStyle}">${step.rating} ${step.symbol}</span>
-                    </div>
-                    ${step.betterSAN ? `<div class="text-amber-300 text-[11px]">💡 Oracle Suggestion: <strong>${step.betterSAN}</strong> (shown by golden arc)</div>` : `<div class="text-white/70 text-[11px]">Solid continuation on the board.</div>`}
-                `;
+                counterEl.textContent = `Move ${window.vrCurrentPly} / ${maxPly}`;
+                moveTextEl.textContent = `${step.moveNum}${step.turnColor === 'w' ? '.' : '...'} ${step.san}`;
+                ratingEl.innerHTML = `<span class="inline-block text-[11px] font-bold px-3 py-1 rounded-full border ${step.badgeStyle}">${step.rating} ${step.symbol}</span>`;
 
-                // If it was a Mistake or Blunder, draw the golden Oracle arc for the better move!
-                if (step.bestMove) {
+                // Show suggestion and draw golden arc if it was a mistake/blunder
+                if (step.betterSAN) {
+                    suggestionEl.innerHTML = `
+                        <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-2.5 flex items-center justify-center gap-2 w-full shadow-inner">
+                            <span class="material-symbols-rounded !text-lg text-amber-400">lightbulb</span>
+                            <span class="text-xs text-amber-200">Better move: <strong class="text-white">${step.betterSAN}</strong></span>
+                        </div>`;
+                    
+                    // Draw Golden Arc for suggestion
                     const sPos = squareToWorld(step.bestMove.from), ePos = squareToWorld(step.bestMove.to);
                     const mPos = new THREE.Vector3().addVectors(sPos, ePos).multiplyScalar(0.5); mPos.y = 2.2;
                     const grp = new THREE.Group();
@@ -1969,22 +1969,14 @@
                     grp.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.06, 8, false), new THREE.MeshBasicMaterial({ color: 0xfbbf24, depthTest: false })));
                     scene.add(grp);
                     activeHintGroup = grp;
+                } else {
+                    suggestionEl.innerHTML = `<span class="text-xs text-emerald-200/60 font-medium">Solid continuation.</span>`;
                 }
             }
-
-            // Highlight active row in the left HUD list
-            window.lastAnalysedReport.forEach(item => {
-                const row = document.getElementById(`vr-move-row-${item.ply}`);
-                if (row) {
-                    row.classList.toggle('border-sky-400', item.ply === window.vrCurrentPly);
-                    row.classList.toggle('bg-sky-500/20', item.ply === window.vrCurrentPly);
-                    if (item.ply === window.vrCurrentPly) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                }
-            });
         };
 
         window.stepVisualReviewBy = function(delta) {
-            stopVisualReviewAutoplay();
+            sound.playSelect();
             stepVisualReviewTo((window.vrCurrentPly || 0) + delta);
         };
 
