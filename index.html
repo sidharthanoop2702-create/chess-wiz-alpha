@@ -2892,6 +2892,56 @@
             }
         };
 
+        window.handleImportGameForAnalysis = function(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                try {
+                    const content = String(ev.target.result || '');
+                    let hist = [];
+                    
+                    if (file.name.toLowerCase().endsWith('.pgn')) {
+                        const temp = new Chess();
+                        if (!temp.load_pgn(content)) throw new Error('Invalid PGN');
+                        hist = temp.history({ verbose: true });
+                    } else {
+                        const data = JSON.parse(content);
+                        
+                        // Verify the cryptographic seal on imported JSON saves
+                        if (typeof ArcaneSecurity !== 'undefined' && ArcaneSecurity.verifySavePayload) {
+                            const isValid = await ArcaneSecurity.verifySavePayload(data);
+                            if (!isValid) {
+                                sound.playCheck();
+                                showToast('🛡️ Security Alert: Modified or forged .JSON save blocked!');
+                                return;
+                            }
+                        }
+
+                        if (Array.isArray(data.historyVerbose) && data.historyVerbose.length) {
+                            hist = data.historyVerbose;
+                        } else if (data.pgn) {
+                            const temp = new Chess();
+                            if (temp.load_pgn(data.pgn)) hist = temp.history({ verbose: true });
+                        }
+                    }
+                    
+                    const srcLabel = document.getElementById('start-analyse-source-label');
+                    if (srcLabel) srcLabel.textContent = `Analysing imported file: ${file.name}`;
+                    
+                    runMoveAnalysisIntoContainers(hist, 'start-analysis-list', 'start-analysis-summary-badges');
+                    sound.playSelect();
+                    showToast(`Analysing "${file.name}"`);
+                } catch (err) {
+                    sound.playCheck();
+                    showToast('Invalid file for analysis! Please choose a valid .JSON or .PGN file.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        };
+
         window.toggleStartCustomizePanel = function() {
             const next = !isStartCustomizeOpen; resetStartMenuSubpanels(); isStartCustomizeOpen = next;
             if (next) {
