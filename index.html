@@ -1798,7 +1798,11 @@
                     const fenAfter = sim.fen();
                     const playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
 
+                    // 1. cpLoss = how much worse the move was compared to the engine's #1 best move
                     const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
+                    // 2. actualDrop = how much material/position you ACTUALLY lost from your own standing before the move
+                    const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
+
                     const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 15;
 
                     // --- CHESS.COM-STYLE TRUE SACRIFICE DETECTOR FOR BRILLIANT (!!) ---
@@ -1813,18 +1817,31 @@
                     const playerAdvantageAfter = isMax ? playedEval : -playedEval;
                     const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerAdvantageAfter >= 150 || sim.in_checkmate());
 
+                    // --- CARELESS PIECE-LOSS / MATE-IN-1 DETECTOR FOR BLUNDER (??) ---
+                    // Check if the opponent's immediate reply delivers Checkmate or wins a piece for a net loss >= 280
+                    let allowsImmediateMate = false;
+                    for (const r of oppResponses) {
+                        sim.move(r);
+                        if (sim.in_checkmate()) allowsImmediateMate = true;
+                        sim.undo();
+                        if (allowsImmediateMate) break;
+                    }
+                    // Only a Blunder if you actually lose a piece (actualDrop >= 280) or allow immediate checkmate!
+                    const isCarelessBlunder = !isBestPlayed && (allowsImmediateMate || actualDrop >= 280);
+
                     let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
 
                     if (isWinningSacrifice) {
                         rating = 'Brilliant'; badgeStyle = 'bg-cyan-400/25 text-cyan-200 border-cyan-300/50'; symbol = '!!';
                     } else if (isBestPlayed) {
                         rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
-                    } else if (cpLoss <= 95) {
-                        rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
-                    } else if (cpLoss <= 240) {
+                    } else if (isCarelessBlunder) {
+                        rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
+                    } else if (actualDrop >= 100 || cpLoss > 140) {
+                        // Losing a pawn or missing a major tactical opportunity is a Mistake (?), never a Blunder!
                         rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                     } else {
-                        rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
+                        rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
                     }
 
                     counts[rating]++;
