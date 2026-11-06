@@ -1746,7 +1746,54 @@
         window.vrAutoplayTimer = null;
         window.vrReturnContext = 'start'; // 'start' or 'gameover'
 
-        const evalBefore = evaluateBoard(sim);
+        function runMoveAnalysisIntoContainers(history, listId, summaryId) {
+            const listEl = document.getElementById(listId);
+            const summaryEl = document.getElementById(summaryId);
+            const startVrBtn = document.getElementById('btn-start-visual-review');
+            const postVrBtn = document.getElementById('btn-postgame-visual-review');
+            if (!listEl || !summaryEl) return;
+
+            listEl.innerHTML = '<div class="text-xs text-white/60 py-3 text-center">Consulting Cathedral Oracle...</div>';
+            startVrBtn?.classList.add('hidden');
+            postVrBtn?.classList.add('hidden');
+
+            setTimeout(() => {
+                // If there are no moves played in that match, keep the window in the center and show "No moves played."
+                if (!history || !history.length) {
+                    window.lastAnalysedMoves = [];
+                    window.lastAnalysedReport = [];
+                    listEl.innerHTML = '<div class="text-xs text-amber-200/80 py-4 text-center font-semibold">No moves played.</div>';
+                    summaryEl.innerHTML = '';
+                    return;
+                }
+
+                window.lastAnalysedMoves = history;
+                window.lastAnalysedReport = [];
+
+                const sim = new Chess();
+                const counts = { Brilliant: 0, Best: 0, Okay: 0, Mistake: 0, Blunder: 0 };
+                let html = '';
+
+                for (let i = 0; i < history.length; i++) {
+                    const played = history[i];
+                    const turnColor = played.color;
+                    const isMax = turnColor === 'w';
+
+                    const legal = sim.moves({ verbose: true });
+                    let bestMove = legal[0];
+                    let bestEval = isMax ? -Infinity : Infinity;
+
+                    for (const cand of legal) {
+                        sim.move(cand);
+                        const ev = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+                        sim.undo();
+                        if (isMax ? ev > bestEval : ev < bestEval) {
+                            bestEval = ev;
+                            bestMove = cand;
+                        }
+                    }
+
+                    const evalBefore = evaluateBoard(sim);
                     sim.move(played);
                     const fenAfter = sim.fen();
                     const playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
@@ -1755,7 +1802,6 @@
                     const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
                     
                     // 2. actualDrop = How much your position ACTUALLY worsened compared to BEFORE you made the move
-                    // (If you just missed a good attack but didn't lose any of your own pieces, actualDrop is 0!)
                     const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
 
                     const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 15;
@@ -1781,8 +1827,6 @@
                         if (allowsImmediateMate) break;
                     }
                     
-                    // ONLY a Blunder if you made a very bad choice (cpLoss >= 200) AND you actively lost a valuable piece 
-                    // (actualDrop >= 280) or walked into an immediate checkmate.
                     const isCarelessBlunder = !isBestPlayed && cpLoss >= 200 && (actualDrop >= 280 || allowsImmediateMate);
 
                     let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
@@ -1794,7 +1838,6 @@
                     } else if (isCarelessBlunder) {
                         rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
                     } else if (cpLoss >= 80) {
-                        // Missing a good move, hanging a pawn, or making a positional error is a Mistake, NEVER a Blunder.
                         rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                     } else {
                         rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
@@ -1853,7 +1896,9 @@
                 listEl.innerHTML = html;
 
                 // Populate the Left-Side Visual Review HUD list & show the Visual Review button!
-                // Show the Visual Review button now that moves are ready!
+                const vrBadges = document.getElementById('vr-summary-badges');
+                if (vrBadges) vrBadges.innerHTML = badgesHTML;
+                renderVisualReviewMoveList();
 
                 if (listId === 'start-analysis-list') startVrBtn?.classList.remove('hidden');
                 if (listId === 'analysis-list') postVrBtn?.classList.remove('hidden');
@@ -1883,9 +1928,9 @@
                 showToast('No moves played.');
                 return;
             }
+            stopVisualReviewAutoplay();
             sound.playSelect();
 
-            // Remember whether we came from the Start Menu or the Game Over modal
             const goModal = document.getElementById('game-over-modal');
             if (goModal && !goModal.classList.contains('hidden')) {
                 window.vrReturnContext = 'gameover';
@@ -1901,7 +1946,6 @@
                 }
             }
 
-            // Safely hide puzzle banner and show the Left-Side Visual Review window
             document.getElementById('puzzle-banner')?.classList.add('hidden');
             document.getElementById('bottom-dock-nav')?.classList.add('hud-hidden');
             document.getElementById('bottom-dock-nav')?.classList.remove('hud-visible');
@@ -1919,6 +1963,7 @@
         };
 
         window.closeVisualReviewMode = function() {
+            stopVisualReviewAutoplay();
             clearOracleHintVisuals();
             const vrBanner = document.getElementById('visual-review-banner');
             if (vrBanner) {
@@ -1981,7 +2026,6 @@
                 if (moveSideEl) moveSideEl.textContent = `${step.sideTag} • ${step.from.toUpperCase()} → ${step.to.toUpperCase()}`;
                 if (ratingEl) ratingEl.innerHTML = `<span class="inline-block text-xs font-bold px-3 py-1 rounded-full border ${step.badgeStyle}">${step.rating} ${step.symbol}</span>`;
 
-                // Show suggestion above the buttons if it has a lower rating (Mistake / Blunder)
                 if (step.betterSAN && step.bestMove) {
                     if (suggestionEl) {
                         suggestionEl.innerHTML = `
@@ -1999,7 +2043,7 @@
                     activeHintGroup = grp;
                 } else {
                     if (suggestionEl) {
-                        suggestionEl.innerHTML = `<span class="text-xs text-emerald-200/75 font-medium">✓ Strong continuation — no better suggestion needed.</span>`;
+                        suggestionEl.innerHTML = `<span class="text-xs text-emerald-200/75 font-medium">✓ Strong continuation.</span>`;
                     }
                 }
             }
@@ -2038,6 +2082,18 @@
                 }
             }, 1250);
         };
+
+        // Add Left/Right Keyboard Arrow Controls for Visual Review
+        window.addEventListener('keydown', (e) => {
+            const vrBanner = document.getElementById('visual-review-banner');
+            if (vrBanner && !vrBanner.classList.contains('hidden')) {
+                if (e.key === 'ArrowRight') {
+                    window.stepVisualReviewBy(1);
+                } else if (e.key === 'ArrowLeft') {
+                    window.stepVisualReviewBy(-1);
+                }
+            }
+        });
 
         function finalizeAnimatedMove(anim) {
             const { attacker, defender, result, rookAnim, endPos } = anim;
