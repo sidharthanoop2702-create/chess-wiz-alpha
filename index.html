@@ -1785,7 +1785,8 @@
 
                     for (const cand of legal) {
                         sim.move(cand);
-                        const ev = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+                        // Search depth 2 so the engine sees recaptures and basic 2-move tactics!
+                        const ev = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
                         sim.undo();
                         if (isMax ? ev > bestEval : ev < bestEval) {
                             bestEval = ev;
@@ -1796,12 +1797,13 @@
                     const evalBefore = evaluateBoard(sim);
                     sim.move(played);
                     const fenAfter = sim.fen();
-                    const playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+                    // Match depth 2 for the played move
+                    const playedEval = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
 
-                    // 1. cpLoss = How much worse your move was compared to the engine's absolute best move
+                    // 1. cpLoss = How much worse your move was compared to the absolute best move
                     const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
                     
-                    // 2. actualDrop = How much your position ACTUALLY worsened compared to BEFORE you made the move
+                    // 2. actualDrop = How much your position ACTUALLY worsened compared to BEFORE you moved
                     const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
 
                     const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 15;
@@ -1819,14 +1821,11 @@
                     const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerAdvantageAfter >= 150 || sim.in_checkmate());
 
                     // --- STRICT CARELESS BLUNDER DETECTOR (??) ---
-                    let allowsImmediateMate = false;
-                    for (const r of oppResponses) {
-                        sim.move(r);
-                        if (sim.in_checkmate()) allowsImmediateMate = true;
-                        sim.undo();
-                        if (allowsImmediateMate) break;
-                    }
+                    // If playedEval sees the opponent delivering checkmate, playerAdvantageAfter will be -90000 or worse
+                    const allowsImmediateMate = playerAdvantageAfter <= -90000;
                     
+                    // ONLY a Blunder if you made a very bad choice (cpLoss >= 200) AND you actively lost a valuable piece 
+                    // (actualDrop >= 280) or walked into an immediate checkmate.
                     const isCarelessBlunder = !isBestPlayed && cpLoss >= 200 && (actualDrop >= 280 || allowsImmediateMate);
 
                     let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
@@ -1838,6 +1837,7 @@
                     } else if (isCarelessBlunder) {
                         rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
                     } else if (cpLoss >= 80) {
+                        // Missing a good move, hanging a pawn, or making a positional error is a Mistake, NEVER a Blunder.
                         rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                     } else {
                         rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
