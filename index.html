@@ -1746,61 +1746,16 @@
         window.vrAutoplayTimer = null;
         window.vrReturnContext = 'start'; // 'start' or 'gameover'
 
-        function runMoveAnalysisIntoContainers(history, listId, summaryId) {
-            const listEl = document.getElementById(listId);
-            const summaryEl = document.getElementById(summaryId);
-            const startVrBtn = document.getElementById('btn-start-visual-review');
-            const postVrBtn = document.getElementById('btn-postgame-visual-review');
-            if (!listEl || !summaryEl) return;
-
-            listEl.innerHTML = '<div class="text-xs text-white/60 py-3 text-center">Consulting Cathedral Oracle...</div>';
-            startVrBtn?.classList.add('hidden');
-            postVrBtn?.classList.add('hidden');
-
-            setTimeout(() => {
-                // If there are no moves played in that match, keep the window in the center and show "No moves played."
-                if (!history || !history.length) {
-                    window.lastAnalysedMoves = [];
-                    window.lastAnalysedReport = [];
-                    listEl.innerHTML = '<div class="text-xs text-amber-200/80 py-4 text-center font-semibold">No moves played.</div>';
-                    summaryEl.innerHTML = '';
-                    return;
-                }
-
-                window.lastAnalysedMoves = history;
-                window.lastAnalysedReport = [];
-
-                const sim = new Chess();
-                const counts = { Brilliant: 0, Best: 0, Okay: 0, Mistake: 0, Blunder: 0 };
-                let html = '';
-
-                for (let i = 0; i < history.length; i++) {
-                    const played = history[i];
-                    const turnColor = played.color;
-                    const isMax = turnColor === 'w';
-
-                    const legal = sim.moves({ verbose: true });
-                    let bestMove = legal[0];
-                    let bestEval = isMax ? -Infinity : Infinity;
-
-                    for (const cand of legal) {
-                        sim.move(cand);
-                        const ev = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
-                        sim.undo();
-                        if (isMax ? ev > bestEval : ev < bestEval) {
-                            bestEval = ev;
-                            bestMove = cand;
-                        }
-                    }
-
-                    const evalBefore = evaluateBoard(sim);
+        const evalBefore = evaluateBoard(sim);
                     sim.move(played);
                     const fenAfter = sim.fen();
                     const playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
 
-                    // 1. cpLoss = how much worse the move was compared to the engine's #1 best move
+                    // 1. cpLoss = How much worse your move was compared to the engine's absolute best move
                     const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
-                    // 2. actualDrop = how much material/position you ACTUALLY lost from your own standing before the move
+                    
+                    // 2. actualDrop = How much your position ACTUALLY worsened compared to BEFORE you made the move
+                    // (If you just missed a good attack but didn't lose any of your own pieces, actualDrop is 0!)
                     const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
 
                     const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 15;
@@ -1817,8 +1772,7 @@
                     const playerAdvantageAfter = isMax ? playedEval : -playedEval;
                     const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerAdvantageAfter >= 150 || sim.in_checkmate());
 
-                    // --- CARELESS PIECE-LOSS / MATE-IN-1 DETECTOR FOR BLUNDER (??) ---
-                    // Check if the opponent's immediate reply delivers Checkmate or wins a piece for a net loss >= 280
+                    // --- STRICT CARELESS BLUNDER DETECTOR (??) ---
                     let allowsImmediateMate = false;
                     for (const r of oppResponses) {
                         sim.move(r);
@@ -1826,8 +1780,10 @@
                         sim.undo();
                         if (allowsImmediateMate) break;
                     }
-                    // Only a Blunder if you actually lose a piece (actualDrop >= 280) or allow immediate checkmate!
-                    const isCarelessBlunder = !isBestPlayed && (allowsImmediateMate || actualDrop >= 280);
+                    
+                    // ONLY a Blunder if you made a very bad choice (cpLoss >= 200) AND you actively lost a valuable piece 
+                    // (actualDrop >= 280) or walked into an immediate checkmate.
+                    const isCarelessBlunder = !isBestPlayed && cpLoss >= 200 && (actualDrop >= 280 || allowsImmediateMate);
 
                     let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
 
@@ -1837,8 +1793,8 @@
                         rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
                     } else if (isCarelessBlunder) {
                         rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
-                    } else if (actualDrop >= 100 || cpLoss > 140) {
-                        // Losing a pawn or missing a major tactical opportunity is a Mistake (?), never a Blunder!
+                    } else if (cpLoss >= 80) {
+                        // Missing a good move, hanging a pawn, or making a positional error is a Mistake, NEVER a Blunder.
                         rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                     } else {
                         rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
