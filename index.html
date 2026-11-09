@@ -1837,8 +1837,8 @@
                         rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
                     } else if (isCarelessBlunder) {
                         rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
-                    } else if (cpLoss >= 140) {
-                        // Relaxed Mistake threshold (from 80 to 140): Minor inaccuracies are now just "Okay", not "Mistakes"!
+                    } else if (cpLoss >= 240) {
+                        // Relaxed Mistake threshold (from 80 to 240): Minor inaccuracies are now just "Okay", not "Mistakes"!
                         rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                     } else {
                         rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
