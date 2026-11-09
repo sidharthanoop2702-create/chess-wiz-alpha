@@ -1746,168 +1746,178 @@
         window.vrAutoplayTimer = null;
         window.vrReturnContext = 'start'; // 'start' or 'gameover'
 
-        function runMoveAnalysisIntoContainers(history, listId, summaryId) {
+        async function runMoveAnalysisIntoContainers(history, listId, summaryId) {
             const listEl = document.getElementById(listId);
             const summaryEl = document.getElementById(summaryId);
             const startVrBtn = document.getElementById('btn-start-visual-review');
             const postVrBtn = document.getElementById('btn-postgame-visual-review');
             if (!listEl || !summaryEl) return;
 
-            listEl.innerHTML = '<div class="text-xs text-white/60 py-3 text-center">Consulting Cathedral Oracle...</div>';
             startVrBtn?.classList.add('hidden');
             postVrBtn?.classList.add('hidden');
 
-            setTimeout(() => {
-                if (!history || !history.length) {
-                    window.lastAnalysedMoves = [];
-                    window.lastAnalysedReport = [];
-                    listEl.innerHTML = '<div class="text-xs text-amber-200/80 py-4 text-center font-semibold">No moves played.</div>';
-                    summaryEl.innerHTML = '';
-                    return;
-                }
-
-                window.lastAnalysedMoves = history;
+            if (!history || !history.length) {
+                window.lastAnalysedMoves = [];
                 window.lastAnalysedReport = [];
+                listEl.innerHTML = '<div class="text-xs text-amber-200/80 py-4 text-center font-semibold">No moves played.</div>';
+                summaryEl.innerHTML = '';
+                return;
+            }
 
-                const sim = new Chess();
-                // Added Book and Good counters
-                const counts = { Book: 0, Brilliant: 0, Best: 0, Good: 0, Okay: 0, Mistake: 0, Blunder: 0 };
-                let html = '';
+            window.lastAnalysedMoves = history;
+            window.lastAnalysedReport = [];
 
-                for (let i = 0; i < history.length; i++) {
-                    const played = history[i];
-                    const turnColor = played.color;
-                    const isMax = turnColor === 'w';
+            const sim = new Chess();
+            const counts = { Book: 0, Brilliant: 0, Best: 0, Good: 0, Okay: 0, Mistake: 0, Blunder: 0 };
+            let html = '';
 
-                    const legal = sim.moves({ verbose: true });
-                    let bestMove = legal[0];
-                    let bestEval = isMax ? -Infinity : Infinity;
+            // Non-blocking UI Progress State
+            listEl.innerHTML = `
+                <div id="analysis-progress-${listId}" class="text-xs text-amber-300 font-semibold py-8 text-center animate-pulse flex flex-col gap-2 items-center justify-center">
+                    <span class="material-symbols-rounded !text-3xl text-amber-400/50">hourglass_empty</span>
+                    <span>Consulting Cathedral Oracle (0%)...</span>
+                </div>`;
+            summaryEl.innerHTML = '';
 
-                    for (const cand of legal) {
-                        sim.move(cand);
-                        const ev = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
-                        sim.undo();
-                        if (isMax ? ev > bestEval : ev < bestEval) {
-                            bestEval = ev;
-                            bestMove = cand;
-                        }
-                    }
-
-                    const evalBefore = evaluateBoard(sim);
-                    sim.move(played);
-                    const fenAfter = sim.fen();
-                    const playedEval = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
-
-                    const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
-                    const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
-
-                    const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 20;
-
-                    // Simulated Book Move: First 5 full moves (10 plies) that maintain top engine evaluation
-                    const isBookMove = i < 10 && cpLoss <= 25; 
-
-                    const movedVal = PIECE_VALUES[played.piece] || 0;
-                    const capturedVal = played.captured ? (PIECE_VALUES[played.captured] || 0) : 0;
-                    const isImportantPiece = ['n', 'b', 'r', 'q'].includes(played.piece);
-
-                    const oppResponses = sim.moves({ verbose: true });
-                    const canRecaptureMovedPiece = oppResponses.some(r => r.to === played.to);
-                    const isDirectSacrifice = isImportantPiece && canRecaptureMovedPiece && (movedVal - capturedVal >= 200);
-
-                    const playerAdvantageAfter = isMax ? playedEval : -playedEval;
-                    const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerAdvantageAfter >= 150 || sim.in_checkmate());
-
-                    let allowsImmediateMate = false;
-                    for (const r of oppResponses) {
-                        sim.move(r);
-                        if (sim.in_checkmate()) allowsImmediateMate = true;
-                        sim.undo();
-                        if (allowsImmediateMate) break;
-                    }
-                    
-                    const isCarelessBlunder = !isBestPlayed && cpLoss >= 200 && (actualDrop >= 280 || allowsImmediateMate);
-
-                    let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
-
-                    if (isWinningSacrifice) {
-                        rating = 'Brilliant'; badgeStyle = 'bg-cyan-400/25 text-cyan-200 border-cyan-300/50'; symbol = '!!';
-                    } else if (isBookMove) {
-                        // Book moves get a brown library-style color
-                        rating = 'Book'; badgeStyle = 'bg-stone-500/25 text-stone-300 border-stone-400/50'; symbol = '📖';
-                    } else if (isBestPlayed || cpLoss <= 25) {
-                        rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
-                    } else if (cpLoss <= 65) {
-                        // Good moves are a teal/green color, slightly less prestigious than Best
-                        rating = 'Good'; badgeStyle = 'bg-teal-500/25 text-teal-200 border-teal-400/40'; symbol = '👍';
-                    } else if (isCarelessBlunder) {
-                        rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
-                    } else if (cpLoss >= 140) {
-                        rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
-                    } else {
-                        rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
-                    }
-
-                    counts[rating]++;
-                    const moveNum = Math.floor(i / 2) + 1;
-                    const sideTag = turnColor === 'w' ? 'Marble (W)' : 'Obsidian (B)';
-                    const showSuggestion = (rating === 'Mistake' || rating === 'Blunder') && bestMove;
-                    const betterSAN = showSuggestion ? formatMoveSAN(bestMove) : '';
-
-                    window.lastAnalysedReport.push({
-                        ply: i + 1,
-                        moveNum,
-                        turnColor,
-                        san: played.san || `${played.from}→${played.to}`,
-                        from: played.from,
-                        to: played.to,
-                        fenAfter,
-                        rating,
-                        badgeStyle,
-                        symbol,
-                        sideTag,
-                        betterSAN,
-                        bestMove
-                    });
-
-                    html += `
-                        <div onclick="openVisualReviewMode(${i + 1})" class="cursor-pointer hover:bg-white/10 transition-colors rounded-xl bg-white/5 border border-white/10 p-2.5 flex flex-col gap-1 text-left">
-                            <div class="flex items-center justify-between">
-                                <div class="text-xs font-semibold text-white">
-                                    <span class="text-white/50 font-mono mr-1">${moveNum}${turnColor === 'w' ? '.' : '...'}</span>
-                                    <span>${played.san || (played.from + '→' + played.to)}</span>
-                                    <span class="text-[10px] text-white/45 ml-1.5">(${sideTag})</span>
-                                </div>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeStyle}">${rating} ${symbol}</span>
-                            </div>
-                            ${showSuggestion ? `
-                                <div class="text-[11px] text-amber-200/90 flex items-center gap-1 mt-0.5">
-                                    <span class="material-symbols-rounded !text-sm text-amber-300">lightbulb</span>
-                                    <span>Better move was <strong>${betterSAN}</strong></span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
+            for (let i = 0; i < history.length; i++) {
+                // Yield thread to the browser every move to absolutely prevent freezing!
+                await new Promise(resolve => setTimeout(resolve, 0));
+                
+                const progEl = document.getElementById(`analysis-progress-${listId}`);
+                if (progEl) {
+                    progEl.querySelector('span:last-child').textContent = `Consulting Cathedral Oracle (${Math.round((i / history.length) * 100)}%)...`;
                 }
 
-                const badgesHTML = `
-                    <span class="px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-200">!! ${counts.Brilliant}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-stone-500/20 text-stone-300">📖 ${counts.Book}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">★ ${counts.Best}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-200">👍 ${counts.Good}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200">✓ ${counts.Okay}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">? ${counts.Mistake}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-200">?? ${counts.Blunder}</span>
+                const played = history[i];
+                const turnColor = played.color;
+                const isMax = turnColor === 'w';
+
+                const legal = sim.moves({ verbose: true });
+                let bestMove = legal[0];
+                let bestEval = isMax ? -Infinity : Infinity;
+
+                for (const cand of legal) {
+                    sim.move(cand);
+                    const ev = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
+                    sim.undo();
+                    if (isMax ? ev > bestEval : ev < bestEval) {
+                        bestEval = ev;
+                        bestMove = cand;
+                    }
+                }
+
+                const evalBefore = evaluateBoard(sim);
+                sim.move(played);
+                const fenAfter = sim.fen();
+                const playedEval = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
+
+                const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
+                const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
+
+                const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 20;
+                
+                // Simulated Chess.com Book Opening (First 5 full moves, acceptable deviation)
+                const isBookMove = i < 10 && cpLoss <= 25; 
+
+                const movedVal = PIECE_VALUES[played.piece] || 0;
+                const capturedVal = played.captured ? (PIECE_VALUES[played.captured] || 0) : 0;
+                const isImportantPiece = ['n', 'b', 'r', 'q'].includes(played.piece);
+
+                const oppResponses = sim.moves({ verbose: true });
+                const canRecaptureMovedPiece = oppResponses.some(r => r.to === played.to);
+                const isDirectSacrifice = isImportantPiece && canRecaptureMovedPiece && (movedVal - capturedVal >= 200);
+
+                const playerAdvantageAfter = isMax ? playedEval : -playedEval;
+                const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerAdvantageAfter >= 150 || sim.in_checkmate());
+
+                let allowsImmediateMate = false;
+                for (const r of oppResponses) {
+                    sim.move(r);
+                    if (sim.in_checkmate()) allowsImmediateMate = true;
+                    sim.undo();
+                    if (allowsImmediateMate) break;
+                }
+                
+                const isCarelessBlunder = !isBestPlayed && cpLoss >= 200 && (actualDrop >= 280 || allowsImmediateMate);
+
+                let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
+
+                if (isWinningSacrifice) {
+                    rating = 'Brilliant'; badgeStyle = 'bg-cyan-400/25 text-cyan-200 border-cyan-300/50'; symbol = '!!';
+                } else if (isBookMove) {
+                    rating = 'Book'; badgeStyle = 'bg-stone-500/25 text-stone-300 border-stone-400/50'; symbol = '<span class="material-symbols-rounded !text-[11px] align-middle">menu_book</span>';
+                } else if (isBestPlayed || cpLoss <= 25) {
+                    rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
+                } else if (cpLoss <= 65) {
+                    rating = 'Good'; badgeStyle = 'bg-teal-500/25 text-teal-200 border-teal-400/40'; symbol = '<span class="material-symbols-rounded !text-[11px] align-middle">thumb_up</span>';
+                } else if (isCarelessBlunder) {
+                    rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
+                } else if (cpLoss >= 140) {
+                    rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
+                } else {
+                    rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
+                }
+
+                counts[rating]++;
+                const moveNum = Math.floor(i / 2) + 1;
+                const sideTag = turnColor === 'w' ? 'Marble (W)' : 'Obsidian (B)';
+                const showSuggestion = (rating === 'Mistake' || rating === 'Blunder') && bestMove;
+                const betterSAN = showSuggestion ? formatMoveSAN(bestMove) : '';
+
+                window.lastAnalysedReport.push({
+                    ply: i + 1,
+                    moveNum,
+                    turnColor,
+                    san: played.san || `${played.from}→${played.to}`,
+                    from: played.from,
+                    to: played.to,
+                    fenAfter,
+                    rating,
+                    badgeStyle,
+                    symbol,
+                    sideTag,
+                    betterSAN,
+                    bestMove
+                });
+
+                html += `
+                    <div onclick="openVisualReviewMode(${i + 1})" class="cursor-pointer hover:bg-white/10 transition-colors rounded-xl bg-white/5 border border-white/10 p-2.5 flex flex-col gap-1 text-left">
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs font-semibold text-white">
+                                <span class="text-white/50 font-mono mr-1">${moveNum}${turnColor === 'w' ? '.' : '...'}</span>
+                                <span>${played.san || (played.from + '→' + played.to)}</span>
+                                <span class="text-[10px] text-white/45 ml-1.5">(${sideTag})</span>
+                            </div>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${badgeStyle}"><span>${rating}</span> ${symbol}</span>
+                        </div>
+                        ${showSuggestion ? `
+                            <div class="text-[11px] text-amber-200/90 flex items-center gap-1 mt-0.5">
+                                <span class="material-symbols-rounded !text-sm text-amber-300">lightbulb</span>
+                                <span>Better move was <strong>${betterSAN}</strong></span>
+                            </div>
+                        ` : ''}
+                    </div>
                 `;
-                summaryEl.innerHTML = badgesHTML;
-                listEl.innerHTML = html;
+            }
 
-                const vrBadges = document.getElementById('vr-summary-badges');
-                if (vrBadges) vrBadges.innerHTML = badgesHTML;
-                renderVisualReviewMoveList();
+            const badgesHTML = `
+                <span class="px-1.5 py-0.5 rounded border border-transparent bg-cyan-400/20 text-cyan-200 flex items-center gap-1">!! <span>${counts.Brilliant}</span></span>
+                <span class="px-1.5 py-0.5 rounded border border-stone-400/30 bg-stone-500/20 text-stone-300 flex items-center gap-1"><span class="material-symbols-rounded !text-[11px]">menu_book</span> <span>${counts.Book}</span></span>
+                <span class="px-1.5 py-0.5 rounded border border-transparent bg-emerald-500/20 text-emerald-200 flex items-center gap-1">★ <span>${counts.Best}</span></span>
+                <span class="px-1.5 py-0.5 rounded border border-teal-400/30 bg-teal-500/20 text-teal-200 flex items-center gap-1"><span class="material-symbols-rounded !text-[11px]">thumb_up</span> <span>${counts.Good}</span></span>
+                <span class="px-1.5 py-0.5 rounded border border-transparent bg-sky-500/20 text-sky-200 flex items-center gap-1">✓ <span>${counts.Okay}</span></span>
+                <span class="px-1.5 py-0.5 rounded border border-transparent bg-amber-500/20 text-amber-200 flex items-center gap-1">? <span>${counts.Mistake}</span></span>
+                <span class="px-1.5 py-0.5 rounded border border-transparent bg-rose-500/20 text-rose-200 flex items-center gap-1">?? <span>${counts.Blunder}</span></span>
+            `;
+            summaryEl.innerHTML = badgesHTML;
+            listEl.innerHTML = html;
 
-                if (listId === 'start-analysis-list') startVrBtn?.classList.remove('hidden');
-                if (listId === 'analysis-list') postVrBtn?.classList.remove('hidden');
-            }, 60);
+            const vrBadges = document.getElementById('vr-summary-badges');
+            if (vrBadges) vrBadges.innerHTML = badgesHTML;
+            renderVisualReviewMoveList();
+
+            if (listId === 'start-analysis-list') startVrBtn?.classList.remove('hidden');
+            if (listId === 'analysis-list') postVrBtn?.classList.remove('hidden');
         }
 
         function renderVisualReviewMoveList() {
@@ -1921,7 +1931,7 @@
                             <span>${item.san}</span>
                             <span class="text-[10px] text-white/45 ml-1">(${item.sideTag})</span>
                         </div>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.badgeStyle}">${item.rating} ${item.symbol}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${item.badgeStyle}"><span>${item.rating}</span> ${item.symbol}</span>
                     </div>
                     ${item.betterSAN ? `<div class="text-[10px] text-amber-200/90">💡 Better: <strong>${item.betterSAN}</strong></div>` : ''}
                 </div>
@@ -2029,7 +2039,9 @@
                 if (counterEl) counterEl.textContent = `Move ${window.vrCurrentPly} of ${maxPly}`;
                 if (moveTextEl) moveTextEl.textContent = `${step.moveNum}${step.turnColor === 'w' ? '.' : '...'} ${step.san}`;
                 if (moveSideEl) moveSideEl.textContent = `${step.sideTag} • ${step.from.toUpperCase()} → ${step.to.toUpperCase()}`;
-                if (ratingEl) ratingEl.innerHTML = `<span class="inline-block text-xs font-bold px-3 py-1 rounded-full border ${step.badgeStyle}">${step.rating} ${step.symbol}</span>`;
+                
+                // Matches the beautiful flex gap layout of the new badges
+                if (ratingEl) ratingEl.innerHTML = `<span class="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-full border ${step.badgeStyle}"><span>${step.rating}</span> ${step.symbol}</span>`;
 
                 if (step.betterSAN && step.bestMove) {
                     if (suggestionEl) {
