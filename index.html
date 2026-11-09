@@ -1758,7 +1758,6 @@
             postVrBtn?.classList.add('hidden');
 
             setTimeout(() => {
-                // If there are no moves played in that match, keep the window in the center and show "No moves played."
                 if (!history || !history.length) {
                     window.lastAnalysedMoves = [];
                     window.lastAnalysedReport = [];
@@ -1771,7 +1770,8 @@
                 window.lastAnalysedReport = [];
 
                 const sim = new Chess();
-                const counts = { Brilliant: 0, Best: 0, Okay: 0, Mistake: 0, Blunder: 0 };
+                // Added Book and Good counters
+                const counts = { Book: 0, Brilliant: 0, Best: 0, Good: 0, Okay: 0, Mistake: 0, Blunder: 0 };
                 let html = '';
 
                 for (let i = 0; i < history.length; i++) {
@@ -1785,7 +1785,6 @@
 
                     for (const cand of legal) {
                         sim.move(cand);
-                        // Search depth 2 so the engine sees recaptures and basic 2-move tactics!
                         const ev = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
                         sim.undo();
                         if (isMax ? ev > bestEval : ev < bestEval) {
@@ -1797,19 +1796,16 @@
                     const evalBefore = evaluateBoard(sim);
                     sim.move(played);
                     const fenAfter = sim.fen();
-                    // Match depth 2 for the played move
                     const playedEval = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
 
-                    // 1. cpLoss = How much worse your move was compared to the absolute best move
                     const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
-                    
-                    // 2. actualDrop = How much your position ACTUALLY worsened compared to BEFORE you moved
                     const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
 
-                    // Relaxed Best threshold: +/- 35 centipawns is still effectively a top-tier move for human play!
-                    const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 35;
+                    const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 20;
 
-                    // --- CHESS.COM-STYLE TRUE SACRIFICE DETECTOR FOR BRILLIANT (!!) ---
+                    // Simulated Book Move: First 5 full moves (10 plies) that maintain top engine evaluation
+                    const isBookMove = i < 10 && cpLoss <= 25; 
+
                     const movedVal = PIECE_VALUES[played.piece] || 0;
                     const capturedVal = played.captured ? (PIECE_VALUES[played.captured] || 0) : 0;
                     const isImportantPiece = ['n', 'b', 'r', 'q'].includes(played.piece);
@@ -1821,24 +1817,31 @@
                     const playerAdvantageAfter = isMax ? playedEval : -playedEval;
                     const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerAdvantageAfter >= 150 || sim.in_checkmate());
 
-                    // --- STRICT CARELESS BLUNDER DETECTOR (??) ---
-                    // If playedEval sees the opponent delivering checkmate, playerAdvantageAfter will be -90000 or worse
-                    const allowsImmediateMate = playerAdvantageAfter <= -90000;
+                    let allowsImmediateMate = false;
+                    for (const r of oppResponses) {
+                        sim.move(r);
+                        if (sim.in_checkmate()) allowsImmediateMate = true;
+                        sim.undo();
+                        if (allowsImmediateMate) break;
+                    }
                     
-                    // ONLY a Blunder if you made a very bad choice (cpLoss >= 200) AND you actively lost a valuable piece 
-                    // (actualDrop >= 280) or walked into an immediate checkmate.
                     const isCarelessBlunder = !isBestPlayed && cpLoss >= 200 && (actualDrop >= 280 || allowsImmediateMate);
 
                     let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
 
                     if (isWinningSacrifice) {
                         rating = 'Brilliant'; badgeStyle = 'bg-cyan-400/25 text-cyan-200 border-cyan-300/50'; symbol = '!!';
-                    } else if (isBestPlayed) {
+                    } else if (isBookMove) {
+                        // Book moves get a brown library-style color
+                        rating = 'Book'; badgeStyle = 'bg-stone-500/25 text-stone-300 border-stone-400/50'; symbol = '📖';
+                    } else if (isBestPlayed || cpLoss <= 25) {
                         rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
+                    } else if (cpLoss <= 65) {
+                        // Good moves are a teal/green color, slightly less prestigious than Best
+                        rating = 'Good'; badgeStyle = 'bg-teal-500/25 text-teal-200 border-teal-400/40'; symbol = '👍';
                     } else if (isCarelessBlunder) {
                         rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
-                    } else if (cpLoss >= 240) {
-                        // Relaxed Mistake threshold (from 80 to 240): Minor inaccuracies are now just "Okay", not "Mistakes"!
+                    } else if (cpLoss >= 140) {
                         rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                     } else {
                         rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
@@ -1888,7 +1891,9 @@
 
                 const badgesHTML = `
                     <span class="px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-200">!! ${counts.Brilliant}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-stone-500/20 text-stone-300">📖 ${counts.Book}</span>
                     <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">★ ${counts.Best}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-200">👍 ${counts.Good}</span>
                     <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200">✓ ${counts.Okay}</span>
                     <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">? ${counts.Mistake}</span>
                     <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-200">?? ${counts.Blunder}</span>
@@ -1896,7 +1901,6 @@
                 summaryEl.innerHTML = badgesHTML;
                 listEl.innerHTML = html;
 
-                // Populate the Left-Side Visual Review HUD list & show the Visual Review button!
                 const vrBadges = document.getElementById('vr-summary-badges');
                 if (vrBadges) vrBadges.innerHTML = badgesHTML;
                 renderVisualReviewMoveList();
