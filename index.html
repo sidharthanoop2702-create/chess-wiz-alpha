@@ -1806,7 +1806,8 @@
                     // 2. actualDrop = How much your position ACTUALLY worsened compared to BEFORE you moved
                     const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
 
-                    const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 15;
+                    // Relaxed Best threshold: +/- 35 centipawns is still effectively a top-tier move for human play!
+                    const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 35;
 
                     // --- CHESS.COM-STYLE TRUE SACRIFICE DETECTOR FOR BRILLIANT (!!) ---
                     const movedVal = PIECE_VALUES[played.piece] || 0;
@@ -1836,8 +1837,8 @@
                         rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
                     } else if (isCarelessBlunder) {
                         rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
-                    } else if (cpLoss >= 80) {
-                        // Missing a good move, hanging a pawn, or making a positional error is a Mistake, NEVER a Blunder.
+                    } else if (cpLoss >= 140) {
+                        // Relaxed Mistake threshold (from 80 to 140): Minor inaccuracies are now just "Okay", not "Mistakes"!
                         rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                     } else {
                         rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
