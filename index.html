@@ -2529,26 +2529,46 @@
         const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
         // --- STOCKFISH.JS GRANDMASTER ENGINE INTEGRATION ---
         let sfWorker = null;
+        let isSfReady = false;
+
         async function getStockfishEngine() {
-            if (sfWorker) return sfWorker;
-            // Fetch Stockfish from CDN and load it as a Blob to bypass cross-origin Web Worker restrictions
-            const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');
-            const text = await res.text();
-            sfWorker = new Worker(URL.createObjectURL(new Blob([text], { type: 'application/javascript' })));
-            sfWorker.postMessage('uci');
-            return sfWorker;
+            if (sfWorker && isSfReady) return sfWorker;
+            
+            return new Promise((resolve) => {
+                // The cleanest way to load a cross-origin Web Worker without fetch/CORS blocks
+                const blob = new Blob(["importScripts('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');"], { type: 'application/javascript' });
+                sfWorker = new Worker(URL.createObjectURL(blob));
+                
+                const bootListener = (e) => {
+                    const msg = typeof e.data === 'string' ? e.data : '';
+                    // Must wait for the engine to officially declare it is awake!
+                    if (msg === 'uciok') {
+                        sfWorker.removeEventListener('message', bootListener);
+                        isSfReady = true;
+                        resolve(sfWorker);
+                    }
+                };
+                
+                sfWorker.addEventListener('message', bootListener);
+                sfWorker.postMessage('uci'); // Wake up the engine
+            });
         }
 
-        async function evaluateFenWithStockfish(fen, depth = 12) {
+        async function evaluateFenWithStockfish(fen, depth = 10) {
             const engine = await getStockfishEngine();
             return new Promise(resolve => {
                 let currentScore = 0;
                 let bestUciMove = null;
                 
+                // FAILSAFE TIMEOUT: Guarantees the progress bar will NEVER get permanently stuck!
+                const failsafe = setTimeout(() => {
+                    engine.removeEventListener('message', listener);
+                    resolve({ score: currentScore, bestMove: bestUciMove });
+                }, 2500);
+                
                 const listener = function(e) {
-                    const msg = e.data;
+                    const msg = typeof e.data === 'string' ? e.data : '';
                     
-                    // Parse evaluation score (centipawns or forced mate)
                     if (msg.includes('info depth')) {
                         const match = msg.match(/score (cp|mate) (-?\d+)/);
                         if (match) {
@@ -2559,8 +2579,9 @@
                         }
                     }
                     
-                    // When engine finishes the requested depth, it outputs 'bestmove'
+                    // Once Stockfish hits the target depth, it spits out the final answer
                     if (msg.startsWith('bestmove')) {
+                        clearTimeout(failsafe);
                         const match = msg.match(/bestmove\s+([a-h][1-8][a-h][1-8][qrbn]?)/);
                         if (match) bestUciMove = match[1];
                         
