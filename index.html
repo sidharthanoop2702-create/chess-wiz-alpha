@@ -1792,24 +1792,35 @@
                 const turnColor = played.color;
                 const isMax = turnColor === 'w';
 
-                const legal = sim.moves({ verbose: true });
+                // --- LIGHTNING FAST ALPHA-BETA TOP LOOP ---
+                // Pre-sort captures first so Alpha-Beta pruning instantly cuts off bad branches
+                const legal = sim.moves({ verbose: true }).sort((a, b) => (b.captured ? 10 : 0) - (a.captured ? 10 : 0));
                 let bestMove = legal[0];
                 let bestEval = isMax ? -Infinity : Infinity;
+                let alpha = -Infinity;
+                let beta = Infinity;
 
                 for (const cand of legal) {
                     sim.move(cand);
-                    const ev = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
+                    // Depth 1 + Top Loop = 2 Plies total (sees immediate recaptures & mates)
+                    const ev = minimaxSearch(sim, 1, alpha, beta, !isMax);
                     sim.undo();
-                    if (isMax ? ev > bestEval : ev < bestEval) {
-                        bestEval = ev;
-                        bestMove = cand;
+                    
+                    if (isMax) {
+                        if (ev > bestEval) { bestEval = ev; bestMove = cand; }
+                        alpha = Math.max(alpha, bestEval);
+                    } else {
+                        if (ev < bestEval) { bestEval = ev; bestMove = cand; }
+                        beta = Math.min(beta, bestEval);
                     }
                 }
 
                 const evalBefore = evaluateBoard(sim);
                 sim.move(played);
                 const fenAfter = sim.fen();
-                const playedEval = minimaxSearch(sim, 2, -Infinity, Infinity, !isMax);
+                
+                // Match depth 1 for the played move so cpLoss math is perfectly balanced
+                const playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
 
                 const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
                 const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
@@ -1852,7 +1863,7 @@
                     rating = 'Good'; badgeStyle = 'bg-teal-500/25 text-teal-200 border-teal-400/40'; symbol = '<span class="material-symbols-rounded !text-[11px] align-middle">thumb_up</span>';
                 } else if (isCarelessBlunder) {
                     rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
-                } else if (cpLoss >= 140) {
+                } else if (cpLoss >= 240) {
                     rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                 } else {
                     rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
