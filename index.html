@@ -1771,64 +1771,45 @@
             const counts = { Book: 0, Brilliant: 0, Best: 0, Good: 0, Okay: 0, Mistake: 0, Blunder: 0 };
             let html = '';
 
-            // Non-blocking UI Progress State
             listEl.innerHTML = `
                 <div id="analysis-progress-${listId}" class="text-xs text-amber-300 font-semibold py-8 text-center animate-pulse flex flex-col gap-2 items-center justify-center">
-                    <span class="material-symbols-rounded !text-3xl text-amber-400/50">hourglass_empty</span>
-                    <span>Consulting Cathedral Oracle (0%)...</span>
+                    <span class="material-symbols-rounded !text-3xl text-amber-400/50">settings_b_roll</span>
+                    <span>Stockfish 10 Engine Analyzing (0%)...</span>
                 </div>`;
             summaryEl.innerHTML = '';
 
+            // Warm up the engine
+            await getStockfishEngine();
+
             for (let i = 0; i < history.length; i++) {
-                // Yield thread to the browser every move to absolutely prevent freezing!
-                await new Promise(resolve => setTimeout(resolve, 0));
-                
                 const progEl = document.getElementById(`analysis-progress-${listId}`);
-                if (progEl) {
-                    progEl.querySelector('span:last-child').textContent = `Consulting Cathedral Oracle (${Math.round((i / history.length) * 100)}%)...`;
-                }
+                if (progEl) progEl.querySelector('span:last-child').textContent = `Stockfish 10 Engine Analyzing (${Math.round((i / history.length) * 100)}%)...`;
 
                 const played = history[i];
                 const turnColor = played.color;
                 const isMax = turnColor === 'w';
 
-                // --- LIGHTNING FAST ALPHA-BETA TOP LOOP ---
-                // Pre-sort captures first so Alpha-Beta pruning instantly cuts off bad branches
-                const legal = sim.moves({ verbose: true }).sort((a, b) => (b.captured ? 10 : 0) - (a.captured ? 10 : 0));
-                let bestMove = legal[0];
-                let bestEval = isMax ? -Infinity : Infinity;
-                let alpha = -Infinity;
-                let beta = Infinity;
+                // 1. Ask Stockfish for the perfect evaluation BEFORE the player moves
+                const preSf = await evaluateFenWithStockfish(sim.fen(), 12);
+                const bestEval = isMax ? preSf.score : -preSf.score;
+                const bestMove = preSf.bestMove ? { 
+                    from: preSf.bestMove.substring(0, 2), 
+                    to: preSf.bestMove.substring(2, 4),
+                    san: preSf.bestMove
+                } : null;
 
-                for (const cand of legal) {
-                    sim.move(cand);
-                    // Depth 1 + Top Loop = 2 Plies total (sees immediate recaptures & mates)
-                    const ev = minimaxSearch(sim, 1, alpha, beta, !isMax);
-                    sim.undo();
-                    
-                    if (isMax) {
-                        if (ev > bestEval) { bestEval = ev; bestMove = cand; }
-                        alpha = Math.max(alpha, bestEval);
-                    } else {
-                        if (ev < bestEval) { bestEval = ev; bestMove = cand; }
-                        beta = Math.min(beta, bestEval);
-                    }
-                }
-
-                const evalBefore = evaluateBoard(sim);
+                // 2. Play the move, then ask Stockfish for the evaluation AFTER
                 sim.move(played);
-                const fenAfter = sim.fen();
+                const postSf = await evaluateFenWithStockfish(sim.fen(), 12);
                 
-                // Match depth 1 for the played move so cpLoss math is perfectly balanced
-                const playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+                // Note: postSf is from the opponent's perspective because the turn changed!
+                const playedEval = isMax ? -postSf.score : postSf.score;
 
+                // cpLoss is incredibly accurate now because Stockfish calculates deep tactical lines
                 const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
-                const actualDrop = Math.max(0, isMax ? (evalBefore - playedEval) : (playedEval - evalBefore));
 
-                const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 20;
-                
-                // Simulated Chess.com Book Opening (First 5 full moves, acceptable deviation)
-                const isBookMove = i < 10 && cpLoss <= 25; 
+                const isBestPlayed = (played.from === bestMove?.from && played.to === bestMove?.to) || cpLoss <= 25;
+                const isBookMove = i < 10 && cpLoss <= 30; 
 
                 const movedVal = PIECE_VALUES[played.piece] || 0;
                 const capturedVal = played.captured ? (PIECE_VALUES[played.captured] || 0) : 0;
@@ -1841,15 +1822,11 @@
                 const playerAdvantageAfter = isMax ? playedEval : -playedEval;
                 const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerAdvantageAfter >= 150 || sim.in_checkmate());
 
-                let allowsImmediateMate = false;
-                for (const r of oppResponses) {
-                    sim.move(r);
-                    if (sim.in_checkmate()) allowsImmediateMate = true;
-                    sim.undo();
-                    if (allowsImmediateMate) break;
-                }
+                // If playerAdvantageAfter drops below -80000, Stockfish sees a forced checkmate for the opponent
+                const allowsImmediateMate = playerAdvantageAfter <= -80000;
+                const threwAwayAdvantage = playerAdvantageAfter < 400; 
                 
-                const isCarelessBlunder = !isBestPlayed && cpLoss >= 300 && (actualDrop >= 280 || allowsImmediateMate);
+                const isCarelessBlunder = !isBestPlayed && cpLoss >= 200 && (cpLoss >= 280 || allowsImmediateMate) && threwAwayAdvantage;
 
                 let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
 
@@ -1857,13 +1834,13 @@
                     rating = 'Brilliant'; badgeStyle = 'bg-cyan-400/25 text-cyan-200 border-cyan-300/50'; symbol = '!!';
                 } else if (isBookMove) {
                     rating = 'Book'; badgeStyle = 'bg-stone-500/25 text-stone-300 border-stone-400/50'; symbol = '<span class="material-symbols-rounded !text-[11px] align-middle">menu_book</span>';
-                } else if (isBestPlayed || cpLoss <= 25) {
+                } else if (isBestPlayed || cpLoss <= 35) {
                     rating = 'Best'; badgeStyle = 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'; symbol = '★';
-                } else if (cpLoss <= 65) {
+                } else if (cpLoss <= 80) {
                     rating = 'Good'; badgeStyle = 'bg-teal-500/25 text-teal-200 border-teal-400/40'; symbol = '<span class="material-symbols-rounded !text-[11px] align-middle">thumb_up</span>';
                 } else if (isCarelessBlunder) {
                     rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
-                } else if (cpLoss >= 240) {
+                } else if (cpLoss >= 150 && threwAwayAdvantage) {
                     rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
                 } else {
                     rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
@@ -1873,7 +1850,7 @@
                 const moveNum = Math.floor(i / 2) + 1;
                 const sideTag = turnColor === 'w' ? 'Marble (W)' : 'Obsidian (B)';
                 const showSuggestion = (rating === 'Mistake' || rating === 'Blunder') && bestMove;
-                const betterSAN = showSuggestion ? formatMoveSAN(bestMove) : '';
+                const betterSAN = showSuggestion ? bestMove.san : '';
 
                 window.lastAnalysedReport.push({
                     ply: i + 1,
@@ -1904,7 +1881,7 @@
                         ${showSuggestion ? `
                             <div class="text-[11px] text-amber-200/90 flex items-center gap-1 mt-0.5">
                                 <span class="material-symbols-rounded !text-sm text-amber-300">lightbulb</span>
-                                <span>Better move was <strong>${betterSAN}</strong></span>
+                                <span>Engine suggests: <strong class="uppercase">${betterSAN}</strong></span>
                             </div>
                         ` : ''}
                     </div>
@@ -2550,6 +2527,54 @@
 
         /* 8. WIZARD AI */
         const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+        // --- STOCKFISH.JS GRANDMASTER ENGINE INTEGRATION ---
+        let sfWorker = null;
+        async function getStockfishEngine() {
+            if (sfWorker) return sfWorker;
+            // Fetch Stockfish from CDN and load it as a Blob to bypass cross-origin Web Worker restrictions
+            const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');
+            const text = await res.text();
+            sfWorker = new Worker(URL.createObjectURL(new Blob([text], { type: 'application/javascript' })));
+            sfWorker.postMessage('uci');
+            return sfWorker;
+        }
+
+        async function evaluateFenWithStockfish(fen, depth = 12) {
+            const engine = await getStockfishEngine();
+            return new Promise(resolve => {
+                let currentScore = 0;
+                let bestUciMove = null;
+                
+                const listener = function(e) {
+                    const msg = e.data;
+                    
+                    // Parse evaluation score (centipawns or forced mate)
+                    if (msg.includes('info depth')) {
+                        const match = msg.match(/score (cp|mate) (-?\d+)/);
+                        if (match) {
+                            const val = parseInt(match[2], 10);
+                            currentScore = match[1] === 'mate' 
+                                ? (val > 0 ? 90000 - val : -90000 - val) 
+                                : val;
+                        }
+                    }
+                    
+                    // When engine finishes the requested depth, it outputs 'bestmove'
+                    if (msg.startsWith('bestmove')) {
+                        const match = msg.match(/bestmove\s+([a-h][1-8][a-h][1-8][qrbn]?)/);
+                        if (match) bestUciMove = match[1];
+                        
+                        engine.removeEventListener('message', listener);
+                        resolve({ score: currentScore, bestMove: bestUciMove });
+                    }
+                };
+                
+                engine.addEventListener('message', listener);
+                engine.postMessage('ucinewgame');
+                engine.postMessage(`position fen ${fen}`);
+                engine.postMessage(`go depth ${depth}`);
+            });
+        }
         function evaluateBoard(g) {
             if (g.in_checkmate()) return g.turn() === 'w' ? -99999 : 99999;
             if (g.in_draw()) return 0;
