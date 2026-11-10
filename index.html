@@ -1746,6 +1746,81 @@
         window.vrAutoplayTimer = null;
         window.vrReturnContext = 'start'; // 'start' or 'gameover'
 
+        // --- HYBRID GRANDMASTER ENGINE (STOCKFISH + LOCAL FALLBACK) ---
+        let sfWorker = null;
+        let isSfReady = false;
+
+        async function getStockfishEngine() {
+            if (sfWorker && isSfReady) return sfWorker;
+            
+            return new Promise((resolve) => {
+                // Safely load Stockfish from CDN, handling Vercel/CDN module quirks
+                const workerCode = `
+                    importScripts('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');
+                    if (typeof STOCKFISH === 'function') {
+                        STOCKFISH(); // Force initialization if required by the CDN build
+                    }
+                `;
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                sfWorker = new Worker(URL.createObjectURL(blob));
+                
+                // Bulletproof Fallback: If CDN fails or blocks, resolve anyway to trigger local engine
+                const bootTimeout = setTimeout(() => {
+                    resolve(sfWorker); 
+                }, 1500);
+
+                const bootListener = (e) => {
+                    const msg = typeof e.data === 'string' ? e.data : '';
+                    if (msg === 'uciok') {
+                        clearTimeout(bootTimeout);
+                        sfWorker.removeEventListener('message', bootListener);
+                        isSfReady = true;
+                        resolve(sfWorker);
+                    }
+                };
+                
+                sfWorker.addEventListener('message', bootListener);
+                sfWorker.postMessage('uci'); // Wake up the engine
+            });
+        }
+
+        async function evaluateFenWithStockfish(fen, depth = 10) {
+            const engine = await getStockfishEngine();
+            return new Promise(resolve => {
+                let currentScore = 0;
+                let bestUciMove = null;
+                
+                // FAILSAFE TIMEOUT: Guarantees the progress bar will NEVER get permanently stuck!
+                const failsafe = setTimeout(() => {
+                    engine.removeEventListener('message', listener);
+                    resolve({ score: currentScore, bestMove: null });
+                }, 2000);
+                
+                const listener = function(e) {
+                    const msg = typeof e.data === 'string' ? e.data : '';
+                    if (msg.includes('info depth')) {
+                        const match = msg.match(/score (cp|mate) (-?\d+)/);
+                        if (match) {
+                            const val = parseInt(match[2], 10);
+                            currentScore = match[1] === 'mate' ? (val > 0 ? 90000 - val : -90000 - val) : val;
+                        }
+                    }
+                    if (msg.startsWith('bestmove')) {
+                        clearTimeout(failsafe);
+                        const match = msg.match(/bestmove\s+([a-h][1-8][a-h][1-8][qrbn]?)/);
+                        if (match) bestUciMove = match[1];
+                        engine.removeEventListener('message', listener);
+                        resolve({ score: currentScore, bestMove: bestUciMove });
+                    }
+                };
+                
+                engine.addEventListener('message', listener);
+                engine.postMessage('ucinewgame');
+                engine.postMessage(`position fen ${fen}`);
+                engine.postMessage(`go depth ${depth}`);
+            });
+        }
+
         async function runMoveAnalysisIntoContainers(history, listId, summaryId) {
             const listEl = document.getElementById(listId);
             const summaryEl = document.getElementById(summaryId);
@@ -1774,41 +1849,86 @@
             listEl.innerHTML = `
                 <div id="analysis-progress-${listId}" class="text-xs text-amber-300 font-semibold py-8 text-center animate-pulse flex flex-col gap-2 items-center justify-center">
                     <span class="material-symbols-rounded !text-3xl text-amber-400/50">settings_b_roll</span>
-                    <span>Stockfish 10 Engine Analyzing (0%)...</span>
+                    <span>Consulting Cathedral Oracle (0%)...</span>
                 </div>`;
             summaryEl.innerHTML = '';
 
-            // Warm up the engine
+            // Warm up Stockfish in the background
             await getStockfishEngine();
 
             for (let i = 0; i < history.length; i++) {
+                // Yield to browser every move to absolutely prevent UI freezing!
+                await new Promise(resolve => setTimeout(resolve, 0));
+
                 const progEl = document.getElementById(`analysis-progress-${listId}`);
-                if (progEl) progEl.querySelector('span:last-child').textContent = `Stockfish 10 Engine Analyzing (${Math.round((i / history.length) * 100)}%)...`;
+                if (progEl) {
+                    const engineLabel = isSfReady ? 'Stockfish 10 Engine' : 'Cathedral Oracle';
+                    progEl.querySelector('span:last-child').textContent = `${engineLabel} Analyzing (${Math.round((i / history.length) * 100)}%)...`;
+                }
 
                 const played = history[i];
                 const turnColor = played.color;
                 const isMax = turnColor === 'w';
 
-                // 1. Ask Stockfish for the perfect evaluation BEFORE the player moves
-                const preSf = await evaluateFenWithStockfish(sim.fen(), 12);
-                const bestEval = isMax ? preSf.score : -preSf.score;
-                const bestMove = preSf.bestMove ? { 
-                    from: preSf.bestMove.substring(0, 2), 
-                    to: preSf.bestMove.substring(2, 4),
-                    san: preSf.bestMove
-                } : null;
+                // --- 1. EVALUATE BOARD BEFORE MOVE ---
+                // We use the local engine strictly to evaluate material/position drop consistently
+                const evalBefore = evaluateBoard(sim);
 
-                // 2. Play the move, then ask Stockfish for the evaluation AFTER
-                sim.move(played);
-                const postSf = await evaluateFenWithStockfish(sim.fen(), 12);
+                // --- 2. FIND BEST POSSIBLE MOVE ---
+                let bestMove = null;
+                let bestEval = 0;
                 
-                // Note: postSf is from the opponent's perspective because the turn changed!
-                const playedEval = isMax ? -postSf.score : postSf.score;
+                if (isSfReady) {
+                    const preSf = await evaluateFenWithStockfish(sim.fen(), 10);
+                    if (preSf.bestMove) {
+                        bestEval = isMax ? preSf.score : -preSf.score;
+                        bestMove = { 
+                            from: preSf.bestMove.substring(0, 2), 
+                            to: preSf.bestMove.substring(2, 4),
+                            san: preSf.bestMove // Raw UCI notation
+                        };
+                    }
+                }
 
-                // cpLoss is incredibly accurate now because Stockfish calculates deep tactical lines
+                // If Stockfish failed/timed out, instantly fallback to Local Engine Alpha-Beta
+                if (!bestMove) {
+                    const legal = sim.moves({ verbose: true }).sort((a, b) => (b.captured ? 10 : 0) - (a.captured ? 10 : 0));
+                    bestMove = legal[0];
+                    bestEval = isMax ? -Infinity : Infinity;
+                    let alpha = -Infinity; let beta = Infinity;
+                    for (const cand of legal) {
+                        sim.move(cand);
+                        const ev = minimaxSearch(sim, 1, alpha, beta, !isMax);
+                        sim.undo();
+                        if (isMax) {
+                            if (ev > bestEval) { bestEval = ev; bestMove = cand; }
+                            alpha = Math.max(alpha, bestEval);
+                        } else {
+                            if (ev < bestEval) { bestEval = ev; bestMove = cand; }
+                            beta = Math.min(beta, bestEval);
+                        }
+                    }
+                }
+
+                // --- 3. EVALUATE BOARD AFTER MOVE ---
+                sim.move(played);
+                const fenAfter = sim.fen();
+                
+                let playedEval = 0;
+                if (isSfReady) {
+                    const postSf = await evaluateFenWithStockfish(sim.fen(), 10);
+                    playedEval = isMax ? -postSf.score : postSf.score;
+                } else {
+                    playedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+                }
+                
+                // Get local heuristic for purely mathematical piece-drop detection
+                const localPlayedEval = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+
                 const cpLoss = Math.max(0, isMax ? (bestEval - playedEval) : (playedEval - bestEval));
+                const actualDrop = Math.max(0, isMax ? (evalBefore - localPlayedEval) : (localPlayedEval - evalBefore));
 
-                const isBestPlayed = (played.from === bestMove?.from && played.to === bestMove?.to) || cpLoss <= 25;
+                const isBestPlayed = (played.from === bestMove.from && played.to === bestMove.to) || cpLoss <= 25;
                 const isBookMove = i < 10 && cpLoss <= 30; 
 
                 const movedVal = PIECE_VALUES[played.piece] || 0;
@@ -1822,11 +1942,16 @@
                 const playerAdvantageAfter = isMax ? playedEval : -playedEval;
                 const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerAdvantageAfter >= 150 || sim.in_checkmate());
 
-                // If playerAdvantageAfter drops below -80000, Stockfish sees a forced checkmate for the opponent
-                const allowsImmediateMate = playerAdvantageAfter <= -80000;
-                const threwAwayAdvantage = playerAdvantageAfter < 400; 
+                let allowsImmediateMate = false;
+                for (const r of oppResponses) {
+                    sim.move(r);
+                    if (sim.in_checkmate()) allowsImmediateMate = true;
+                    sim.undo();
+                    if (allowsImmediateMate) break;
+                }
                 
-                const isCarelessBlunder = !isBestPlayed && cpLoss >= 200 && (cpLoss >= 280 || allowsImmediateMate) && threwAwayAdvantage;
+                const threwAwayAdvantage = playerAdvantageAfter < 400; 
+                const isCarelessBlunder = !isBestPlayed && cpLoss >= 200 && (actualDrop >= 280 || allowsImmediateMate) && threwAwayAdvantage;
 
                 let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
 
@@ -1850,7 +1975,7 @@
                 const moveNum = Math.floor(i / 2) + 1;
                 const sideTag = turnColor === 'w' ? 'Marble (W)' : 'Obsidian (B)';
                 const showSuggestion = (rating === 'Mistake' || rating === 'Blunder') && bestMove;
-                const betterSAN = showSuggestion ? bestMove.san : '';
+                const betterSAN = showSuggestion ? formatMoveSAN(bestMove) : '';
 
                 window.lastAnalysedReport.push({
                     ply: i + 1,
