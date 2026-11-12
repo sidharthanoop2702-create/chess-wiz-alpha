@@ -1746,7 +1746,7 @@
         window.vrAutoplayTimer = null;
         window.vrReturnContext = 'start'; // 'start' or 'gameover'
 
-        // --- OFFICIAL CHESS.COM STOCKFISH.JS ENGINE (WASM / ASM.JS WEB WORKER) ---
+        // --- VERIFIED STOCKFISH.JS ENGINE (WITH EXPLICIT BLOB BOOTSTRAP) ---
         let sfWorker = null;
         let isSfReady = false;
         let sfBootPromise = null;
@@ -1756,7 +1756,6 @@
             if (sfBootPromise) return sfBootPromise;
 
             sfBootPromise = (async () => {
-                // Official self-starting Stockfish worker builds (Chess.com / Lichess Web Worker standard)
                 const CDN_URLS = [
                     'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js',
                     'https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js'
@@ -1766,15 +1765,33 @@
                     try {
                         const res = await fetch(url);
                         if (!res.ok) continue;
-                        const engineSource = await res.text();
+                        const rawCode = await res.text();
 
-                        // Create a same-origin Blob Worker directly from the fetched C++/WASM source
-                        // (Bypasses all cross-origin importScripts restrictions on Vercel & Chrome!)
-                        const blob = new Blob([engineSource], { type: 'application/javascript' });
+                        // CRITICAL FIX: stockfish.js checks if self.location.href contains "stockfish"
+                        // or exports a STOCKFISH() factory function when run inside a Blob Worker.
+                        // This wrapper explicitly hooks STOCKFISH() to the Worker's onmessage/postMessage!
+                        const bootstrapCode = `
+                            ${rawCode}
+                            ;
+                            (function() {
+                                if (typeof STOCKFISH === "function" && !self.onmessage) {
+                                    var eng = STOCKFISH();
+                                    eng.onmessage = function(line) {
+                                        self.postMessage(typeof line === "string" ? line : (line && line.data ? line.data : String(line)));
+                                    };
+                                    self.onmessage = function(e) {
+                                        var cmd = typeof e.data === "string" ? e.data : "";
+                                        if (eng.postMessage) eng.postMessage(cmd);
+                                    };
+                                }
+                            })();
+                        `;
+
+                        const blob = new Blob([bootstrapCode], { type: 'application/javascript' });
                         const worker = new Worker(URL.createObjectURL(blob));
 
                         const ready = await new Promise((resolve) => {
-                            const timeout = setTimeout(() => resolve(false), 3500);
+                            const timeout = setTimeout(() => resolve(false), 4000);
                             const onMsg = (e) => {
                                 const line = typeof e.data === 'string' ? e.data : '';
                                 if (line.includes('uciok')) {
@@ -1788,17 +1805,16 @@
                         });
 
                         if (ready) {
-                            // Configure Stockfish threads/hash for fast browser Game Review
                             worker.postMessage('setoption name Hash value 32');
                             sfWorker = worker;
                             isSfReady = true;
-                            console.log('%c♟️ [Stockfish Engine] Official Stockfish Web Worker active!', 'color: #34d399; font-weight: bold;');
+                            console.log('%c♟️ [Stockfish 10] Genuine Stockfish Engine ONLINE!', 'color: #34d399; font-weight: bold;');
                             return sfWorker;
                         } else {
                             worker.terminate();
                         }
                     } catch (err) {
-                        console.warn('Stockfish CDN fetch attempt failed:', url, err);
+                        console.warn('Stockfish load error:', err);
                     }
                 }
 
@@ -1809,7 +1825,6 @@
             return sfBootPromise;
         }
 
-        // Wait for Stockfish 'readyok' sync between commands so outputs never mix
         function syncStockfishReady(engine) {
             return new Promise((resolve) => {
                 const timeout = setTimeout(resolve, 1000);
@@ -1825,19 +1840,16 @@
             });
         }
 
-        // Evaluate a single FEN at Depth 12 with Stockfish (normalized to White's perspective)
-        async function evaluateFenWithStockfish(fen, depth = 12) {
+        // Returns evaluation strictly from the SIDE-TO-MOVE's perspective (+ = side to move is winning)
+        async function evaluateSideToMoveWithStockfish(fen, depth = 10) {
             const engine = await getStockfishEngine();
             if (!engine || !isSfReady) return null;
 
             await syncStockfishReady(engine);
 
             return new Promise((resolve) => {
-                let currentScoreWhite = 0;
-                let mateInMoves = null;
+                let sideScore = 0; // Always from the perspective of whoever's turn it is in `fen`
                 let bestUciMove = null;
-                const turnColor = fen.split(' ')[1] || 'w';
-                const sideMultiplier = turnColor === 'w' ? 1 : -1;
 
                 const failsafe = setTimeout(() => {
                     engine.removeEventListener('message', listener);
@@ -1854,12 +1866,9 @@
                             const type = match[1];
                             const val = parseInt(match[2], 10);
                             if (type === 'mate') {
-                                mateInMoves = val * sideMultiplier;
-                                const rawMateScore = val > 0 ? (90000 - Math.abs(val) * 100) : (-90000 + Math.abs(val) * 100);
-                                currentScoreWhite = rawMateScore * sideMultiplier;
+                                sideScore = val > 0 ? (90000 - Math.abs(val) * 100) : (-90000 + Math.abs(val) * 100);
                             } else {
-                                mateInMoves = null;
-                                currentScoreWhite = val * sideMultiplier;
+                                sideScore = val;
                             }
                         }
                     }
@@ -1870,8 +1879,7 @@
                         if (match) bestUciMove = match[1];
                         engine.removeEventListener('message', listener);
                         resolve({
-                            scoreWhite: currentScoreWhite,
-                            mateInMoves,
+                            sideScore,
                             bestMoveUci: bestUciMove
                         });
                     }
@@ -1883,14 +1891,7 @@
             });
         }
 
-        // Exact Chess.com / Lichess Win-Probability Curve (0% to 100%) from Centipawns
-        function centipawnsToWinPercent(cpFromPlayerPerspective) {
-            if (cpFromPlayerPerspective >= 80000) return 100;
-            if (cpFromPlayerPerspective <= -80000) return 0;
-            return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cpFromPlayerPerspective)) - 1);
-        }
-
-        // Convert Stockfish UCI move (e.g. "f3e4" or "e7e8q") into chess.js verbose move object
+        // Convert Stockfish UCI move (e.g. "b1c3") into chess.js verbose move object
         function uciToMoveObj(chessInstance, uciStr) {
             if (!uciStr || uciStr.length < 4) return null;
             const from = uciStr.substring(0, 2);
@@ -1898,6 +1899,13 @@
             const promo = uciStr.length > 4 ? uciStr[4] : undefined;
             const legal = chessInstance.moves({ verbose: true });
             return legal.find(m => m.from === from && m.to === to && (!promo || m.promotion === promo)) || legal.find(m => m.from === from && m.to === to) || null;
+        }
+
+        // Chess.com Win-Probability Curve (0% to 100%)
+        function centipawnsToWinPercent(cp) {
+            if (cp >= 80000) return 100;
+            if (cp <= -80000) return 0;
+            return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);
         }
 
         async function runMoveAnalysisIntoContainers(history, listId, summaryId) {
@@ -1927,7 +1935,7 @@
             listEl.innerHTML = `
                 <div id="analysis-progress-${listId}" class="text-xs text-amber-300 font-semibold py-8 text-center animate-pulse flex flex-col gap-2 items-center justify-center">
                     <span class="material-symbols-rounded !text-3xl text-amber-400/50">settings_b_roll</span>
-                    <span>Booting Stockfish Engine (0%)...</span>
+                    <span>Booting Stockfish 10 Engine (0%)...</span>
                 </div>`;
             summaryEl.innerHTML = '';
 
@@ -1937,117 +1945,109 @@
                 await syncStockfishReady(engine);
             }
 
-            // Build all FEN positions (0 .. N) so Stockfish evaluates each board state once at Depth 11
-            const simBuilder = new Chess();
-            const fens = [simBuilder.fen()];
-            for (let i = 0; i < history.length; i++) {
-                simBuilder.move(history[i]);
-                fens.push(simBuilder.fen());
-            }
+            const sim = new Chess();
 
-            const posEvals = [];
-            for (let p = 0; p < fens.length; p++) {
+            for (let i = 0; i < history.length; i++) {
                 await new Promise(resolve => setTimeout(resolve, 0));
                 const progEl = document.getElementById(`analysis-progress-${listId}`);
                 if (progEl) {
-                    const engineLabel = isSfReady ? 'Stockfish (Depth 11)' : 'Cathedral Oracle';
-                    progEl.querySelector('span:last-child').textContent = `${engineLabel} Analyzing (${Math.round((p / fens.length) * 100)}%)...`;
+                    const tag = isSfReady ? 'Stockfish 10 Engine' : 'Tactical Engine (Depth 2)';
+                    progEl.querySelector('span:last-child').textContent = `${tag} Analyzing (${Math.round((i / history.length) * 100)}%)...`;
                 }
 
-                const tempChess = new Chess(fens[p]);
-                if (tempChess.game_over()) {
-                    let terminalScoreW = 0;
-                    if (tempChess.in_checkmate()) {
-                        terminalScoreW = tempChess.turn() === 'w' ? -99999 : 99999;
-                    }
-                    posEvals.push({ scoreWhite: terminalScoreW, bestMoveObj: null });
-                    continue;
-                }
-
-                let sfRes = null;
-                if (isSfReady) {
-                    sfRes = await evaluateFenWithStockfish(fens[p], 11);
-                }
-
-                if (sfRes) {
-                    posEvals.push({
-                        scoreWhite: sfRes.scoreWhite,
-                        bestMoveObj: uciToMoveObj(tempChess, sfRes.bestMoveUci)
-                    });
-                } else {
-                    // Fallback Depth-2 Minimax only if user has no internet connection
-                    const isMax = tempChess.turn() === 'w';
-                    const legal = tempChess.moves({ verbose: true }).sort((a, b) => (b.captured ? 10 : 0) - (a.captured ? 10 : 0));
-                    let bestMoveObj = legal[0] || null;
-                    let bestEv = isMax ? -Infinity : Infinity;
-                    let alpha = -Infinity, beta = Infinity;
-                    for (const cand of legal) {
-                        tempChess.move(cand);
-                        const ev = minimaxSearch(tempChess, 1, alpha, beta, !isMax);
-                        tempChess.undo();
-                        if (isMax) {
-                            if (ev > bestEv) { bestEv = ev; bestMoveObj = cand; }
-                            alpha = Math.max(alpha, bestEv);
-                        } else {
-                            if (ev < bestEv) { bestEv = ev; bestMoveObj = cand; }
-                            beta = Math.min(beta, bestEv);
-                        }
-                    }
-                    posEvals.push({ scoreWhite: bestEv, bestMoveObj });
-                }
-            }
-
-            // Grade every move using Chess.com's exact Win-Probability Loss thresholds
-            const sim = new Chess();
-            for (let i = 0; i < history.length; i++) {
                 const played = history[i];
                 const turnColor = played.color;
                 const isMax = turnColor === 'w';
 
-                const beforeData = posEvals[i];
-                const afterData = posEvals[i + 1];
-                const bestMove = beforeData.bestMoveObj;
+                let playerEvalBefore = 0; // Score of the best move from the current player's perspective
+                let playerEvalAfter = 0;  // Score of the played move from the current player's perspective
+                let bestMove = null;
 
+                if (isSfReady) {
+                    // 1. Stockfish evaluation BEFORE move (from current player's perspective)
+                    const sfBefore = await evaluateSideToMoveWithStockfish(sim.fen(), 10);
+                    if (sfBefore) {
+                        playerEvalBefore = sfBefore.sideScore;
+                        bestMove = uciToMoveObj(sim, sfBefore.bestMoveUci);
+                    }
+                }
+
+                // Fallback or if Stockfish missed bestMove object
+                if (!bestMove) {
+                    const legal = sim.moves({ verbose: true }).sort((a, b) => (b.captured ? 10 : 0) - (a.captured ? 10 : 0));
+                    bestMove = legal[0];
+                    let bestWhiteEv = isMax ? -Infinity : Infinity;
+                    let alpha = -Infinity, beta = Infinity;
+                    for (const cand of legal) {
+                        sim.move(cand);
+                        const ev = minimaxSearch(sim, 1, alpha, beta, !isMax);
+                        sim.undo();
+                        if (isMax) {
+                            if (ev > bestWhiteEv) { bestWhiteEv = ev; bestMove = cand; }
+                            alpha = Math.max(alpha, bestWhiteEv);
+                        } else {
+                            if (ev < bestWhiteEv) { bestWhiteEv = ev; bestMove = cand; }
+                            beta = Math.min(beta, bestWhiteEv);
+                        }
+                    }
+                    playerEvalBefore = isMax ? bestWhiteEv : -bestWhiteEv;
+                }
+
+                // Play the actual move on the board
                 sim.move(played);
                 const fenAfter = sim.fen();
 
-                // Player's Stockfish score before and after their move (positive = player is winning)
-                const playerEvalBefore = isMax ? beforeData.scoreWhite : -beforeData.scoreWhite;
-                const playerEvalAfter  = isMax ? afterData.scoreWhite  : -afterData.scoreWhite;
+                if (sim.in_checkmate()) {
+                    // The player who just moved delivered Checkmate!
+                    playerEvalAfter = 99999;
+                } else if (sim.in_draw() || sim.in_stalemate() || sim.in_threefold_repetition()) {
+                    playerEvalAfter = 0;
+                } else if (isSfReady) {
+                    // 2. Stockfish evaluation AFTER move (it is now the OPPONENT'S turn, so negate their sideScore!)
+                    const sfAfter = await evaluateSideToMoveWithStockfish(fenAfter, 10);
+                    if (sfAfter) {
+                        playerEvalAfter = -sfAfter.sideScore;
+                    } else {
+                        const rawW = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+                        playerEvalAfter = isMax ? rawW : -rawW;
+                    }
+                } else {
+                    const rawW = minimaxSearch(sim, 1, -Infinity, Infinity, !isMax);
+                    playerEvalAfter = isMax ? rawW : -rawW;
+                }
 
-                const cpLoss = Math.max(0, playerEvalBefore - playerEvalAfter);
+                // If the player played the exact move Stockfish recommended, cpLoss is 0
+                const exactBestMatch = bestMove && played.from === bestMove.from && played.to === bestMove.to;
+                const cpLoss = exactBestMatch ? 0 : Math.max(0, playerEvalBefore - playerEvalAfter);
+
                 const winPctBefore = centipawnsToWinPercent(playerEvalBefore);
                 const winPctAfter  = centipawnsToWinPercent(playerEvalAfter);
-                const winPctLoss   = Math.max(0, winPctBefore - winPctAfter);
+                const winPctLoss   = exactBestMatch ? 0 : Math.max(0, winPctBefore - winPctAfter);
 
-                const exactBestMatch = bestMove && played.from === bestMove.from && played.to === bestMove.to;
-                const isBestPlayed = exactBestMatch || winPctLoss <= 1.8 || cpLoss <= 20;
-                const isBookMove = i < 8 && winPctLoss <= 3.5 && cpLoss <= 35;
+                const isBestPlayed = exactBestMatch || cpLoss <= 15;
+                const isBookMove = i < 8 && cpLoss <= 30;
 
-                // Brilliant (!!) — True Piece Sacrifice that is also a top Stockfish move and keeps a winning/equal attack
+                // Brilliant (!!) — True Piece Sacrifice of a Knight/Bishop/Rook/Queen that is the best move & winning
                 const movedVal = PIECE_VALUES[played.piece] || 0;
                 const capturedVal = played.captured ? (PIECE_VALUES[played.captured] || 0) : 0;
                 const isImportantPiece = ['n', 'b', 'r', 'q'].includes(played.piece);
                 const oppResponses = sim.moves({ verbose: true });
                 const canRecaptureMovedPiece = oppResponses.some(r => r.to === played.to);
                 const isDirectSacrifice = isImportantPiece && canRecaptureMovedPiece && (movedVal - capturedVal >= 200);
-                const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerEvalAfter >= 120 || sim.in_checkmate());
+                const isWinningSacrifice = isBestPlayed && isDirectSacrifice && (playerEvalAfter >= 150 || sim.in_checkmate());
 
-                // Did this move allow a forced mate or lose a huge chunk of win probability?
-                const allowsForcedMate = playerEvalAfter <= -80000 && playerEvalBefore > -70000;
+                // Did this move allow forced mate or lose a piece while the game was still contested?
+                const allowsForcedMate = playerEvalAfter <= -80000;
+                const alreadyCrushingAfterMove = playerEvalAfter >= 600 && !allowsForcedMate;
 
-                // Safety net: If you are still up a full Queen (+650 cp) and not getting mated, sacrificing material is not a Blunder
-                const stillOverwhelminglyWinning = playerEvalAfter >= 650 && !allowsForcedMate;
-
-                // Chess.com Win% Classification:
-                // Blunder (??): Drops Win Probability by >= 20% (with cpLoss >= 220) OR steps into a forced mate
-                const isBlunder = !isBestPlayed && !stillOverwhelminglyWinning && (
-                    allowsForcedMate || (winPctLoss >= 20 && cpLoss >= 220) || cpLoss >= 420
+                // Blunder (??): Drops >= 260 cp (a full minor piece or forced mate) AND wasn't already up +600
+                const isBlunder = !isBestPlayed && !alreadyCrushingAfterMove && (
+                    allowsForcedMate || cpLoss >= 260 || (winPctLoss >= 22 && cpLoss >= 180)
                 );
 
-                // Mistake (?): Drops Win Probability by 10% to 20% (with cpLoss >= 100), or loses 200+ cp while ahead
-                const isMistake = !isBestPlayed && !isBlunder && (
-                    (winPctLoss >= 9.5 && cpLoss >= 95) || cpLoss >= 200
+                // Mistake (?): Drops 110 to 259 cp (a pawn or tactical error)
+                const isMistake = !isBestPlayed && !isBlunder && !alreadyCrushingAfterMove && (
+                    cpLoss >= 110 || (winPctLoss >= 11 && cpLoss >= 85)
                 );
 
                 let rating = 'Okay', badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30', symbol = '✓';
@@ -2062,7 +2062,7 @@
                     rating = 'Blunder'; badgeStyle = 'bg-rose-500/25 text-rose-200 border-rose-400/40'; symbol = '??';
                 } else if (isMistake) {
                     rating = 'Mistake'; badgeStyle = 'bg-amber-500/25 text-amber-200 border-amber-400/40'; symbol = '?';
-                } else if (winPctLoss <= 5.0 || cpLoss <= 55) {
+                } else if (cpLoss <= 45) {
                     rating = 'Good'; badgeStyle = 'bg-teal-500/25 text-teal-200 border-teal-400/40'; symbol = '<span class="material-symbols-rounded !text-[11px] align-middle">thumb_up</span>';
                 } else {
                     rating = 'Okay'; badgeStyle = 'bg-sky-500/20 text-sky-200 border-sky-400/30'; symbol = '✓';
